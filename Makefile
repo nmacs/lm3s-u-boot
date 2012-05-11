@@ -356,10 +356,19 @@ ifeq ($(CONFIG_MMC_U_BOOT),y)
 ALL += $(obj)mmc_spl/u-boot-mmc-spl.bin
 endif
 
+# LPC addition, could use a conditional
+ALL += u-boot-lpc.hex u-boot.dis
+
 all:		$(ALL)
 
 $(obj)u-boot.hex:	$(obj)u-boot
 		$(OBJCOPY) ${OBJCFLAGS} -O ihex $< $@
+
+$(obj)u-boot-lpc.bin:	$(obj)u-boot.bin
+		./lpc17_fcg $(obj)u-boot.bin $(obj)u-boot-lpc.bin
+
+$(obj)u-boot-lpc.hex:	$(obj)u-boot-lpc.bin
+		$(OBJCOPY) ${OBJCFLAGS} -O ihex $< $@ -I binary
 
 $(obj)u-boot.srec:	$(obj)u-boot
 		$(OBJCOPY) -O srec $< $@
@@ -989,6 +998,13 @@ versatile_config	\
 versatileab_config	\
 versatilepb_config :	unconfig
 	@board/armltd/versatile/split_by_variant.sh $@
+
+#########################################################################
+# NXP development boards
+#########################################################################
+
+ea1788_config: unconfig
+	@$(MKCONFIG) ea1788 arm cortex-m3 ea1788 nxp lpc17xx
 
 #########################################################################
 ## XScale Systems
