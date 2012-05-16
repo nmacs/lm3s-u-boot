@@ -1006,6 +1006,9 @@ versatilepb_config :	unconfig
 ea1788_config: unconfig
 	@$(MKCONFIG) ea1788 arm cortex-m3 ea1788 nxp lpc17xx
 
+uwic_config: unconfig
+	@$(MKCONFIG) uwic arm cortex-m3 uwic elster lm3s
+
 #########################################################################
 ## XScale Systems
 #########################################################################

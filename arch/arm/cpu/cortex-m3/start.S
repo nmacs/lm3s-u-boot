@@ -29,9 +29,9 @@
 #include <config.h>
 #include <version.h>
 
-.extern	lpc17_board_init
 .extern red_LED_on
 .extern red_LED_off
+.extern	lowlevel_board_init
 .extern udelay
 .extern mpu_init
 .extern mpu_enable
@@ -65,7 +65,7 @@ _start:
  * the binary image. Be sure it's inserted before making the hex file
  * for burning into FLASH.
  */
-	.word	0 
+	.word	0
 
 /*
  * 5 more CM3 reserved vectors
@@ -275,7 +275,7 @@ cpu_init_crit:
 	bl	mpu_enable
 
 	/* Jump to board specific initialization */
-	bl	lpc17_board_init
+	bl	 lowlevel_board_init
 
 	pop	{pc}
 
