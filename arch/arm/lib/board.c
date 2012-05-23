@@ -63,7 +63,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-ulong monitor_flash_len;
+//ulong monitor_flash_len;
 
 #ifdef CONFIG_HAS_DATAFLASH
 extern int  AT91F_DataflashInit(void);
@@ -86,6 +86,10 @@ extern void rtl8019_get_enetaddr (uchar * addr);
 #include <i2c.h>
 #endif
 
+extern char _u_boot_code_start[];
+extern char _u_boot_code_end[];
+extern char _u_boot_bss_start[];
+extern char _u_boot_bss_end[];
 
 /************************************************************************
  * Coloured LED functionality
@@ -137,9 +141,9 @@ static int init_baudrate (void)
 static int display_banner (void)
 {
 	printf ("\n\n%s\n\n", version_string);
-	debug ("U-Boot code: %08lX -> %08lX  BSS: -> %08lX\n",
-	       _TEXT_BASE,
-	       _bss_start_ofs+_TEXT_BASE, _bss_end_ofs+_TEXT_BASE);
+	debug ("U-Boot code: %08lX -> %08lX  BSS: %08lX -> %08lX\n",
+	       _u_boot_code_start, _u_boot_code_end,
+	       _u_boot_bss_start, _u_boot_bss_end);
 #ifdef CONFIG_MODEM_SUPPORT
 	debug ("Modem Support enabled\n");
 #endif
@@ -280,7 +284,7 @@ void board_init_f (ulong bootflag)
 	memset ((void*)gd, 0, sizeof (gd_t));
 
 //	gd->mon_len = _bss_end_ofs; // NXP Workaround for relocation
-	gd->mon_len = 0x80000; // Matches load address for u-boot
+	gd->mon_len = 0x0; // Matches load address for u-boot
 
 	for (init_fnc_ptr = init_sequence; *init_fnc_ptr; ++init_fnc_ptr) {
 		if ((*init_fnc_ptr)() != 0) {
@@ -450,8 +454,8 @@ void board_init_r (gd_t *id, ulong dest_addr)
 
 	gd->flags |= GD_FLG_RELOC;	/* tell others: relocation done */
 
-	monitor_flash_len = _end_ofs;
-	debug ("monitor flash len: %08lX\n", monitor_flash_len);
+	//monitor_flash_len = _end_ofs;
+	//debug ("monitor flash len: %08lX\n", monitor_flash_len);
 	board_init();	/* Setup chipselects */
 
 #ifdef CONFIG_SERIAL_MULTI
