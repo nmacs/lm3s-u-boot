@@ -21,57 +21,95 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
+ 
+MEMORY
+{
+	ROM :   ORIGIN = 0,          LENGTH = 512K
+	SRAM :  ORIGIN = 0x20000000, LENGTH = 96K
+	SDRAM : ORIGIN = 0x60000000, LENGTH = 8M
+}
+          
+REGION_ALIAS("REGION_TEXT", ROM);
+REGION_ALIAS("REGION_RODATA", ROM);
+REGION_ALIAS("REGION_DATA", SRAM);
+REGION_ALIAS("REGION_BSS", SRAM);
 
 OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
 OUTPUT_ARCH(arm)
 ENTRY(_start)
 SECTIONS
 {
-	. = 0x00000000;
-
+	. = ALIGN(4);
 	.text	:
 	{
-		arch/arm/cpu/cortex-m3/start.o	(.text)
+		__u_boot_code_start = .;
 		*(.text)
-	}
-
+		__u_boot_code_end = .;
+	} > REGION_TEXT
+	
 	. = ALIGN(4);
-	.rodata : { *(SORT_BY_ALIGNMENT(SORT_BY_NAME(.rodata*))) }
-
-	. = ALIGN(4);
-	.data : {
-	}
-
-	. = ALIGN(4);
-
-	. = .;
-	__u_boot_cmd_start = .;
-	.u_boot_cmd : { *(.u_boot_cmd) }
-	__u_boot_cmd_end = .;
-
-	. = ALIGN(4);
-
-	.rel.dyn : {
-		__rel_dyn_start = .;
-		*(.rel*)
-		__rel_dyn_end = .;
-	}
-
-	.dynsym : {
-		__dynsym_start = .;
+	.dynsym :
+	{
 		*(.dynsym)
-	}
+	} > REGION_TEXT
+	
+	. = ALIGN(4);
+	.rel :
+	{
+		*(.rel*)
+	} > REGION_TEXT
+	
+	. = ALIGN(4);
+	.got :
+	{
+		*(.got*)
+	} > REGION_TEXT
+	
+	. = ALIGN(4);
+	.hash :
+	{
+		*(.hash)
+	} > REGION_TEXT
+	
+	. = ALIGN(4);
+	.u_boot_cmd : 
+	{ 
+		__u_boot_cmd_start2 = 4;
+		*(.u_boot_cmd) 
+		__u_boot_cmd_end = .;
+	} > REGION_RODATA
+	
+	__u_boot_cmd_start = LOADADDR(.u_boot_cmd);
 
 	. = ALIGN(4);
-	_end = .;
+	.rodata : 
+	{
+		*(.rodata*)
+		
+		. = ALIGN(4);
+		__u_boot_rodata_end = .;
+	} > REGION_RODATA
+	
+	. = ALIGN(4);
+	.data : AT (__u_boot_rodata_end)
+	{
+		__u_boot_data_start = .;
+		*(.data)
+		. = ALIGN(4);
+		__u_boot_data_end = .;
+	} > REGION_DATA
+	
+	__u_boot_data_load_start = LOADADDR(.data);
 
-	.bss __rel_dyn_start (OVERLAY) : {
-		__bss_start = .;
+	. = ALIGN(4);
+	.bss :
+	{
+		__u_boot_bss_start = .;
 		*(.bss)
-		 . = ALIGN(4);
-		__bss_end__ = .;
-	}
-
+		. = ALIGN(4);
+		__u_boot_bss_end = .;
+	} > REGION_BSS
+	
 	/DISCARD/ : { *(.dynstr*) }
 	/DISCARD/ : { *(.dynamic*) }
 	/DISCARD/ : { *(.plt*) }

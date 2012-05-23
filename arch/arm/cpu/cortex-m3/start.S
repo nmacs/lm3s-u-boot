@@ -116,31 +116,46 @@ offsets_rel:
 _TEXT_BASE:
 	.word	CONFIG_SYS_TEXT_BASE
 
-.globl _bss_start_ofs
-_bss_start_ofs:
-	.word __bss_start - _start
-.globl _bss_end_ofs
-_bss_end_ofs:
-	.word __bss_end__ - _start
-.globl _end_ofs
-_end_ofs:
-	.word _end - _start
+.globl _u_boot_code_start
+_u_boot_code_start:
+	.word __u_boot_code_start - _start
+
+.globl _u_boot_code_end
+_u_boot_code_end:
+	.word __u_boot_code_end - _start
+
+.globl _u_boot_cmd_start
+_u_boot_cmd_start:
+	.word __u_boot_cmd_start - _start
+
+.globl _u_boot_cmd_end
+_u_boot_cmd_end:
+	.word __u_boot_cmd_end - _start
+
+.globl _u_boot_data_start
+_u_boot_data_start:
+	.word __u_boot_data_start - _start
+
+.globl _u_boot_data_end
+_u_boot_data_end:
+	.word __u_boot_data_end - _start
+
+.globl _u_boot_data_load_start
+_u_boot_data_load_start:
+	.word __u_boot_data_load_start - _start
+
+.globl _u_boot_bss_start
+_u_boot_bss_start:
+	.word __u_boot_bss_start - _start
+
+.globl _u_boot_bss_end
+_u_boot_bss_end:
+	.word __u_boot_bss_end - _start
 
 #ifdef CONFIG_USE_BOARD_MPU_TABLE
 _board_mpu_table_offs:
 	.word board_mpu_table - CONFIG_SYS_TEXT_BASE
 #endif
-/*
- * These may not be needed
- */
-/*
-_rel_dyn_start_ofs:
-	.word __rel_dyn_start - CONFIG_SYS_TEXT_BASE
-_rel_dyn_end_ofs:
-	.word __rel_dyn_end - CONFIG_SYS_TEXT_BASE
-_dynsym_start_ofs:
-	.word __dynsym_start - CONFIG_SYS_TEXT_BASE
-*/
 
 /* IRQ stack memory + 8 bytes */
 .globl IRQ_STACK_START_IN
@@ -157,7 +172,6 @@ IRQ_STACK_START_IN:
  *
  *************************************************************************/
 reset:
-
 	mov	r0, pc
 	ldr	r1, =offset_mark
 offset_mark:
@@ -166,65 +180,17 @@ offset_mark:
 	sub	r4, r0, r1
 	mov	r9, r4 /* R9 has address to offset_rel */
 
+	bl init_data_sections
+
 #ifndef CONFIG_SKIP_LOWLEVEL_INIT
 	/* Low level init */
 	bl	cpu_init_crit
 #endif
 
-	/* Relocate data now or hope something doesn't break in all
-	 * the 'relative' code and data elsewhere.
-	 */
-	bl	relocate_pre
-
 /* call board_init_f, absolute jump without return */
 call_board_init_f:
-	ldr	r0, =board_init_f
-	bx	r0
-
-/*************************************************************************
- *
- * void relocate_pre(void)
- *
- * Early code relocation to RAM - this may not be 'proper'
- *
- *************************************************************************/
-relocate_pre:
-	push	{lr}
-
-	mov	r4, r9
-
-	/* Get destination start and end addresses */
-	ldr	r1, [r4, #(_TEXT_BASE - offsets_rel)]
-	ldr	r2, [r4, #(_end_ofs - offsets_rel)]
-	add	r2, r2, r1
-
-	/* Copy everything */
-	ldr	r0, =_start
-pre_copy_loop:
-	cmp	r1, r2
-	beq	pre_copy_loop_exit
-	ldr	r3, [r0]
-	add	r0, r0, #4
-	str	r3, [r1]
-	add	r1, r1, #4
-	B	pre_copy_loop
-
-pre_copy_loop_exit:
-	/* Clear BSS */
-	ldr	r3, [r4, #(_TEXT_BASE - offsets_rel)]
-	ldr	r1, [r4, #(_bss_start_ofs - offsets_rel)]
-	ldr	r2, [r4, #(_bss_end_ofs - offsets_rel)]
-	add	r1, r1, r3
-	add	r2, r2, r3
-	mov	r3, #0
-
-clear_bss:
-	str	r3, [r1]
-	add	r1, r1, #4
-	cmp	r1, r2
-	bne	clear_bss
-
-	pop	{pc}
+	ldr r0, =board_init_f
+	bx r0
 
 /*************************************************************************
  *
@@ -235,22 +201,22 @@ clear_bss:
  *
  *************************************************************************/
 	.align 3 /* Align for C to assembly call */
-.globl	relocate_code
+.globl relocate_code
 relocate_code:
 	/* Setup new stack */
-	mov	sp, r0
+	mov sp, r0
 
 /*
  * We are done. Do not return, instead branch to second part of board
  * initialization, now running from RAM.
  */
 jump_2_ram:
-	ldr	r3, =board_init_r
+	ldr r3, =board_init_r
 	/* setup parameters for board_init_r */
 	mov	r0, r1		/* gd_t */
 	mov	r1, r2		/* dest_addr */
 	/* jump to it ... */
-	bx	r3
+	bx r3
 
 /*************************************************************************
  *
