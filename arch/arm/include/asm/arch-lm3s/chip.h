@@ -108,7 +108,7 @@
 #  define LM3S_NADC            1  /* One ADC module */
 #  define LM2S_NPWM            0  /* No PWM generator modules */
 #  define LM3S_NQEI            0  /* No quadrature encoders */
-#  define LM3S_NPORTS          8  /* 8 Ports (GPIOA-H) 5-38 GPIOs */
+#  define LM3S_NPORTS          9  /* 8 Ports (GPIOA-H) 5-38 GPIOs */
 
 #  define LM3S_SRAM_SIZE      0x18000
 #  define LM3S_FLASH_SIZE     0x80000
@@ -120,6 +120,7 @@
 
 #include "lm3s_memorymap.h"      /* Memory map */
 #include "lm3s_syscontrol.h"     /* System control module */
+#include "lm3s_epi.h"
 #include "lm3s_gpio.h"           /* GPIO modules */
 #include "lm3s_uart.h"           /* UART modules */
 //#include "lm3s_i2c.h"            /* I2C modules */

@@ -373,6 +373,7 @@
 #define SYSCON_RCGC1_TIMER3           (1 << 19) /* Bit 19: Timer 3 Clock Gating Control */
 #define SYSCON_RCGC1_COMP0            (1 << 24) /* Bit 24: Analog Comparator 0 Clock Gating */
 #define SYSCON_RCGC1_COMP1            (1 << 25) /* Bit 25: Analog Comparator 1 Clock Gating */
+#define SYSCON_RCGC1_EPI0             (1 << 30) /* Bit 30: External Peripheral Interface 0 */
 
 /* Run Mode Clock Gating Control Register 2 (RCGC2), offset 0x108 */
 
