@@ -136,8 +136,8 @@ cmd_tbl_t *find_cmd_tbl (const char *cmd, cmd_tbl_t *table, int table_len)
 
 cmd_tbl_t *find_cmd (const char *cmd)
 {
-	int len = &__u_boot_cmd_end - &__u_boot_cmd_start;
-	return find_cmd_tbl(cmd, &__u_boot_cmd_start, len);
+	int len = _u_boot_cmd_end - _u_boot_cmd_start;
+	return find_cmd_tbl(cmd, _u_boot_cmd_start, len);
 }
 
 int cmd_usage(cmd_tbl_t *cmdtp)

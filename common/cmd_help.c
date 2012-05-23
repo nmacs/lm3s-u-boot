@@ -26,8 +26,8 @@
 
 int do_help(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
-	return _do_help(&__u_boot_cmd_start,
-			&__u_boot_cmd_end - &__u_boot_cmd_start,
+	return _do_help(_u_boot_cmd_start,
+			_u_boot_cmd_end - _u_boot_cmd_start,
 			cmdtp, flag, argc, argv);
 }
 

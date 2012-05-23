@@ -61,8 +61,8 @@ struct cmd_tbl_s {
 
 typedef struct cmd_tbl_s	cmd_tbl_t;
 
-extern cmd_tbl_t  __u_boot_cmd_start;
-extern cmd_tbl_t  __u_boot_cmd_end;
+extern cmd_tbl_t  *_u_boot_cmd_start;
+extern cmd_tbl_t  *_u_boot_cmd_end;
 
 
 /* common/command.c */
