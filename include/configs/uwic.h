@@ -111,7 +111,7 @@
 #define CONFIG_ENV_IS_IN_FLASH
 #define CONFIG_ENV_SIZE			0x40000 /* 2 blocks */
 //#define CONFIG_ENV_OFFSET		0x40000 /* Blocks 2, 3 */
-#define CONFIG_ENV_ADDR			LM3S_FLASH_SIZE - CONFIG_ENV_SIZE /* ATAGs passed here */
+#define CONFIG_ENV_ADDR			(LM3S_FLASH_SIZE - CONFIG_ENV_SIZE) /* ATAGs passed here */
 
 /*
  * Area and size for malloc
@@ -261,5 +261,7 @@
  */
 #define CONFIG_DISPLAY_CPUINFO
 #define CONFIG_UART0_SERIAL_CONSOLE
+
+#define DEBUG
 
 #endif /* __EA1788_H */
