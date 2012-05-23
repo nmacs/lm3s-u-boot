@@ -228,10 +228,9 @@ int serial_init(void)
 int serial_getc(void)
 {
 	/* Wait for a character from the UART */
-	//while (!(__raw_readl(LPC17_UART_LSR(UART_BASE)) & (1 << 0)));
+	while ((getreg32(LM3S_CONSOLE_BASE + LM3S_UART_FR_OFFSET) & UART_FR_RXFE));
 
-	//return (int) (__raw_readl(LPC17_UART_FIFO_DLL(UART_BASE)) & 0xFF);
-	return 0;
+	return (int)(getreg32(LM3S_CONSOLE_BASE + LM3S_UART_DR_OFFSET) & UART_DR_DATA_MASK);
 }
 
 void serial_putc(const char ch)
@@ -250,10 +249,7 @@ void serial_putc(const char ch)
 int serial_tstc(void)
 {
 	/* Test for a character from the UART */
-	//if (!(__raw_readl(LPC17_UART_LSR(UART_BASE)) & 1))
-	//	return 0;
-
-	return 0;
+	return (getreg32(LM3S_CONSOLE_BASE + LM3S_UART_FR_OFFSET) & UART_FR_RXFE) == 0;
 }
 
 void serial_puts(const char *s)
