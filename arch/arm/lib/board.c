@@ -86,10 +86,10 @@ extern void rtl8019_get_enetaddr (uchar * addr);
 #include <i2c.h>
 #endif
 
-extern char _u_boot_code_start[];
-extern char _u_boot_code_end[];
-extern char _u_boot_bss_start[];
-extern char _u_boot_bss_end[];
+extern size_t* _u_boot_code_start;
+extern size_t* _u_boot_code_end;
+extern size_t* _u_boot_bss_start;
+extern size_t* _u_boot_bss_end;
 
 /************************************************************************
  * Coloured LED functionality
