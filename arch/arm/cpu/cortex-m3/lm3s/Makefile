@@ -25,7 +25,7 @@ include $(TOPDIR)/config.mk
 
 LIB	= $(obj)lib$(SOC).o
 
-COBJS	= common.o serial.o flash.o timer.o lm3s_syscontrol.o lm3s_gpio.o
+COBJS	= common.o serial.o flash.o timer.o syscontrol.o gpio.o
 SOBJS	=
 
 SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
