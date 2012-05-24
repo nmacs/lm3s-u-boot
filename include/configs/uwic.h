@@ -78,18 +78,15 @@
  * to be setup for the board that initializes the MPU permissions. If
  * this is undefined, the MPU will be setup with RW for the entire address
  * range.
+ *
+ * No MPU Initialization required.
  */
-//#define CONFIG_USE_BOARD_MPU_TABLE
+#undef CONFIG_USE_BOARD_MPU_TABLE
 
 /*
  * Needed for board init
  */
 #undef CONFIG_SKIP_LOWLEVEL_INIT
-
-/*
- * Use red LED for status
- */
-//#define STATUS_LED_RED
 
 /*
  * SDRAM physical Memory Map
@@ -103,14 +100,12 @@
  * 2KHz clock tick
  */
 #define	CONFIG_SYS_HZ			1000
-//#define CONFIG_SYS_SYS_CLK_FREQ		CONFIG_SYSPLL_CLK_RATE
 
 /*
  * Address and size of stored environment Data
  */
 #define CONFIG_ENV_IS_IN_FLASH
 #define CONFIG_ENV_SIZE			0x40000 /* 2 blocks */
-//#define CONFIG_ENV_OFFSET		0x40000 /* Blocks 2, 3 */
 #define CONFIG_ENV_ADDR			(LM3S_FLASH_SIZE - CONFIG_ENV_SIZE) /* ATAGs passed here */
 
 /*
@@ -180,15 +175,6 @@
 #define CONFIG_SYS_MEMTEST_START	PHYS_SDRAM_1
 #define CONFIG_SYS_MEMTEST_END		(PHYS_SDRAM_1 + PHYS_SDRAM_1_SIZE)
 
-/*
- * Support for NAND FLASH, environment store in NAND at block 100
- */
-//#define CONFIG_CMD_NAND
-//#define CONFIG_SYS_MAX_NAND_DEVICE	1
-//#define CONFIG_SYS_NAND_BASE		0x90000000
-
-#undef CONFIG_CMD_NAND
-
 /* allow to overwrite serial and ethaddr */
 //#define CONFIG_ENV_OVERWRITE
 
@@ -228,6 +214,7 @@
 #define CONFIG_CMD_ECHO   /* echo arguments   */
 #define CONFIG_CMD_RUN    /* run command in env variable  */
 
+#undef CONFIG_CMD_NAND
 #undef CONFIG_CMD_BDI    /* bdinfo     */
 #undef CONFIG_CMD_BOOTD  /* bootd      */
 #undef CONFIG_CMD_CONSOLE  /* coninfo      */
