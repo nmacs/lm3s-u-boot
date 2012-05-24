@@ -104,14 +104,18 @@
 /*
  * Address and size of stored environment Data
  */
-#define CONFIG_ENV_IS_IN_FLASH
+#define CONFIG_ENV_IS_NOWHERE
 #define CONFIG_ENV_SIZE			0x40000 /* 2 blocks */
-#define CONFIG_ENV_ADDR			(LM3S_FLASH_SIZE - CONFIG_ENV_SIZE) /* ATAGs passed here */
 
 /*
  * Area and size for malloc
  */
 #define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + 1024 * 1024)
+
+/*
+ * SPI configuration
+ */
+#define CONFIG_LM3S_SPI
 
 /*
  * No support for IRQs
@@ -174,9 +178,6 @@
  */
 #define CONFIG_SYS_MEMTEST_START	PHYS_SDRAM_1
 #define CONFIG_SYS_MEMTEST_END		(PHYS_SDRAM_1 + PHYS_SDRAM_1_SIZE)
-
-/* allow to overwrite serial and ethaddr */
-//#define CONFIG_ENV_OVERWRITE
 
 /*
  * Support for various capabilities
@@ -250,5 +251,7 @@
 #define CONFIG_UART0_SERIAL_CONSOLE
 
 #define DEBUG
+
+#undef CONFIG_BOOTCOMMAND
 
 #endif /* __EA1788_H */
