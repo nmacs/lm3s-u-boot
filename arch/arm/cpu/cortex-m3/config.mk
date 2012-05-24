@@ -23,7 +23,7 @@
 PLATFORM_RELFLAGS += -fno-common -ffixed-r8 -msoft-float
 
 # Cortex M3 with thumb2 support
-PLATFORM_CPPFLAGS += -march=armv7-m -mthumb -Os -static-libgcc -fpic -mtune=cortex-m3 -nostdlib
+PLATFORM_CPPFLAGS += -march=armv7-m -mthumb -O0 -static-libgcc -mtune=cortex-m3 -nostdlib
 # =========================================================================
 #
 # Supply options according to compiler version

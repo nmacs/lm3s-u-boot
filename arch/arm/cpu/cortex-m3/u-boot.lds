@@ -74,12 +74,10 @@ SECTIONS
 	. = ALIGN(4);
 	.u_boot_cmd : 
 	{ 
-		__u_boot_cmd_start2 = 4;
+		__u_boot_cmd_start = .;
 		*(.u_boot_cmd) 
 		__u_boot_cmd_end = .;
 	} > REGION_RODATA
-	
-	__u_boot_cmd_start = LOADADDR(.u_boot_cmd);
 
 	. = ALIGN(4);
 	.rodata : 
@@ -94,7 +92,7 @@ SECTIONS
 	.data : AT (__u_boot_rodata_end)
 	{
 		__u_boot_data_start = .;
-		*(.data)
+		*(.data*)
 		. = ALIGN(4);
 		__u_boot_data_end = .;
 	} > REGION_DATA
