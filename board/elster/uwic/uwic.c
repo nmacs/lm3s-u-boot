@@ -194,6 +194,24 @@ static void uwic_setup_sdram()
   while( (getreg32(LM3S_EPI0_STAT) & EPI_STAT_INITSEQ_MASK) ) {}
 }
 
+int board_translate_cs(unsigned int* translated_cs, unsigned int cs)
+{
+  switch(cs)
+  {
+  case 0:
+    *translated_cs = GPIO_SSI0_CS_SF;
+    return 0;
+  case 1:
+    *translated_cs = GPIO_SSI0_CS_EE;
+    return 0;
+  case 2:
+    *translated_cs = GPIO_SSI0_CS_ETH;
+    return 0;
+  default:
+    return -1;
+  }
+}
+
 extern size_t *_u_boot_bss_start;
 extern size_t *_u_boot_bss_end;
 
@@ -201,9 +219,9 @@ extern size_t *_u_boot_data_load_start;
 extern size_t *_u_boot_data_start;
 extern size_t *_u_boot_data_end;
 
-
 void init_data_sections()
 {
-  memcpy(_u_boot_data_start, _u_boot_data_load_start, (char*)_u_boot_data_end - (char*)_u_boot_data_start);
+  memcpy(_u_boot_data_start, _u_boot_data_load_start,
+      (char*)_u_boot_data_end - (char*)_u_boot_data_start);
   memset(_u_boot_bss_start, 0, (char*)_u_boot_bss_end - (char*)_u_boot_bss_start);
 }

@@ -4,6 +4,13 @@
  *   Copyright (C) 2009-2012 Max Nekludov. All rights reserved.
  *   Author: Max Nekludov <macscomp@gmail.com>
  *
+ *   Based on nuttx:
+ *
+ *   arch/arm/src/lm32/lm3s_ssi.c
+ *
+ *   Copyright (C) 2009-2010 Gregory Nutt. All rights reserved.
+ *   Author: Gregory Nutt <spudmonkey@racsa.co.cr>
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -42,14 +49,75 @@
 
 struct lm3s_spi_slave {
   struct spi_slave slave;
-  unsigned int mode;
+
+  uint32_t base;
+
   uint32_t cpsdvsr;
   uint32_t cr0;
-  uint32_t cr1;
+
+  void  *txbuffer;              /* Source buffer */
+  void  *rxbuffer;              /* Destination buffer */
+
+  int      ntxwords;            /* Number of words left to transfer on the Tx FIFO */
+  int      nrxwords;            /* Number of words received on the Rx FIFO */
+  int      nwords;              /* Number of words to be exchanged */
+  uint8_t  nbits;               /* Current number of bits per word */
+  uint32_t actual;
+
+  void  (*txword)(struct lm3s_spi_slave *priv);
+  void  (*rxword)(struct lm3s_spi_slave *priv);
 };
+
+#ifdef CONFIG_BOARD_TRANSLATE_CS
+extern int board_translate_cs(unsigned int* translated_cs, unsigned int cs);
+#endif
+
+/* The number of (16-bit) words that will fit in the Tx FIFO */
+#define LM3S_TXFIFO_WORDS 8
+
+/* Configuration settings */
+#ifndef CONFIG_SSI_TXLIMIT
+#  define CONFIG_SSI_TXLIMIT (LM3S_TXFIFO_WORDS/2)
+#endif
+
+#if CONFIG_SSI_TXLIMIT < 1 || CONFIG_SSI_TXLIMIT > LM3S_TXFIFO_WORDS
+#  error "Invalid range for CONFIG_SSI_TXLIMIT"
+#endif
+
+#if CONFIG_SSI_TXLIMIT && CONFIG_SSI_TXLIMIT < (LM3S_TXFIFO_WORDS/2)
+#  error "CONFIG_SSI_TXLIMIT must be at least half the TX FIFO size"
+#endif
 
 #define to_lm3s_spi_slave(s) container_of(s, struct lm3s_spi_slave, slave)
 #define SSI_BASE LM3S_SSI0_BASE
+
+#define SSI_DEBUG          /* Define to enable debug */
+#define SSI_VERBOSE_DEBUG  /* Define to enable verbose debug */
+
+#ifdef SSI_DEBUG
+#  define ssidbg  debug
+#  ifdef SSI_VERBOSE_DEBUG
+#    define ssivdbg debug
+#  else
+#    define ssivdbg(x...)
+#  endif
+#else
+#  define ssidbg(x...)
+#  define ssivdbg(x...)
+#endif
+
+static inline uint32_t get_ssibase(unsigned int bus)
+{
+  switch(bus)
+  {
+  case 0:
+    return LM3S_SSI0_BASE;
+  case 1:
+    return LM3S_SSI1_BASE;
+  default:
+    return 0;
+  }
+}
 
 /****************************************************************************
  * Name: ssi_getreg
@@ -66,9 +134,10 @@ struct lm3s_spi_slave {
  *
  ****************************************************************************/
 
-static inline uint32_t ssi_getreg(unsigned int offset)
+static inline uint32_t ssi_getreg(struct lm3s_spi_slave *priv,
+                                     unsigned int offset)
 {
-  return getreg32(SSI_BASE + offset);
+  return getreg32(priv->base + offset);
 }
 
 /****************************************************************************
@@ -78,6 +147,7 @@ static inline uint32_t ssi_getreg(unsigned int offset)
  *   Write the value to the SSI register at this offeset
  *
  * Input Parameters:
+ *   priv   - Device-specific state data
  *   offset - Offset to the SSI register from the register base address
  *   value  - Value to write
  *
@@ -86,9 +156,10 @@ static inline uint32_t ssi_getreg(unsigned int offset)
  *
  ****************************************************************************/
 
-static inline void ssi_putreg(unsigned int offset, uint32_t value)
+static inline void ssi_putreg(struct lm3s_spi_slave *priv,
+                                 unsigned int offset, uint32_t value)
 {
-  putreg32(value, SSI_BASE + offset);
+  putreg32(value, priv->base + offset);
 }
 
 /****************************************************************************
@@ -164,6 +235,7 @@ static void ssi_setbits(struct lm3s_spi_slave *priv, int nbits)
     regval &= ~SSI_CR0_DSS_MASK;
     regval |= ((nbits - 1) << SSI_CR0_DSS_SHIFT);
     priv->cr0 = regval;
+    priv->nbits = nbits;
   }
 }
 
@@ -249,7 +321,7 @@ static void ssi_setfrequency(struct lm3s_spi_slave *priv, uint32_t frequency)
   priv->cr0 = regval;
 
   /* Calcluate the actual frequency */
-  //actual = SYSCLK_FREQUENCY / (cpsdvsr * (scr + 1));
+  priv->actual = SYSCLK_FREQUENCY / (cpsdvsr * (scr + 1));
 }
 
 /****************************************************************************
@@ -270,11 +342,11 @@ static void ssi_setfrequency(struct lm3s_spi_slave *priv, uint32_t frequency)
  *
  ****************************************************************************/
 
-static void ssi_disable()
+static void ssi_disable(struct lm3s_spi_slave *priv)
 {
   uint32_t regval;
 
-  regval = ssi_getreg(LM3S_SSI_CR1_OFFSET);
+  regval = ssi_getreg(priv, LM3S_SSI_CR1_OFFSET);
   regval &= ~SSI_CR1_SSE;
   ssi_putreg(priv, LM3S_SSI_CR1_OFFSET, regval);
 }
@@ -296,75 +368,525 @@ static void ssi_disable()
  *
  ****************************************************************************/
 
-static void ssi_enable()
+static void ssi_enable(struct lm3s_spi_slave *priv)
 {
-  uint32_t regval = ssi_getreg(LM3S_SSI_CR1_OFFSET);
+  uint32_t regval = ssi_getreg(priv, LM3S_SSI_CR1_OFFSET);
   regval  |= SSI_CR1_SSE;
-  ssi_putreg(LM3S_SSI_CR1_OFFSET, regval);
+  ssi_putreg(priv, LM3S_SSI_CR1_OFFSET, regval);
+}
+
+/****************************************************************************
+ * Name: ssi_txnull, ssi_txuint16, and ssi_txuint8
+ *
+ * Description:
+ *   Transfer all ones, a uint8_t, or uint16_t to Tx FIFO and update the txbuffer
+ *   pointer appropriately.  The selected function dependes on (1) if there
+ *   is a source txbuffer provided, and (2) if the number of bits per
+ *   word is <=8 or >8.
+ *
+ * Input Parameters:
+ *   priv   - Device-specific state data
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+static void ssi_txnull(struct lm3s_spi_slave *priv)
+{
+  ssivdbg("TX: ->0xffff\n");
+  ssi_putreg(priv, LM3S_SSI_DR_OFFSET, 0xffff);
+}
+
+static void ssi_txuint16(struct lm3s_spi_slave *priv)
+{
+  uint16_t *ptr    = (uint16_t*)priv->txbuffer;
+  ssivdbg("TX: %p->%04x\n", ptr, *ptr);
+  ssi_putreg(priv, LM3S_SSI_DR_OFFSET, (uint32_t)(*ptr++));
+  priv->txbuffer = (void*)ptr;
+}
+
+static void ssi_txuint8(struct lm3s_spi_slave *priv)
+{
+  uint8_t *ptr   = (uint8_t*)priv->txbuffer;
+  ssivdbg("TX: %p->%02x\n", ptr, *ptr);
+  ssi_putreg(priv, LM3S_SSI_DR_OFFSET, (uint32_t)(*ptr++));
+  priv->txbuffer = (void*)ptr;
+}
+
+/****************************************************************************
+ * Name: ssi_rxnull, ssi_rxuint16, and ssi_rxuint8
+ *
+ * Description:
+ *   Discard input, save a uint8_t, or or save a uint16_t from Tx FIFO in the
+ *   user rxvbuffer and update the rxbuffer pointer appropriately.  The
+ *   selected function dependes on (1) if there is a desination rxbuffer
+ *   provided, and (2) if the number of bits per word is <=8 or >8.
+ *
+ * Input Parameters:
+ *   priv   - Device-specific state data
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+static void ssi_rxnull(struct lm3s_spi_slave *priv)
+{
+#ifdef SSI_DEBUG_VERBOSE
+  uint32_t regval  = ssi_getreg(priv, LM3S_SSI_DR_OFFSET);
+  ssivdbg("RX: discard %04x\n", regval);
+#else
+  (void)ssi_getreg(priv, LM3S_SSI_DR_OFFSET);
+#endif
+}
+
+static void ssi_rxuint16(struct lm3s_spi_slave *priv)
+{
+  uint16_t *ptr    = (uint16_t*)priv->rxbuffer;
+  *ptr           = (uint16_t)ssi_getreg(priv, LM3S_SSI_DR_OFFSET);
+  ssivdbg("RX: %p<-%04x\n", ptr, *ptr);
+  priv->rxbuffer = (void*)(++ptr);
+}
+
+static void ssi_rxuint8(struct lm3s_spi_slave *priv)
+{
+  uint8_t *ptr   = (uint8_t*)priv->rxbuffer;
+  *ptr           = (uint8_t)ssi_getreg(priv, LM3S_SSI_DR_OFFSET);
+  ssivdbg("RX: %p<-%02x\n", ptr, *ptr);
+  priv->rxbuffer = (void*)(++ptr);
+}
+
+/****************************************************************************
+ * Name: ssi_txfifofull
+ *
+ * Description:
+ *   Return true if the Tx FIFO is full
+ *
+ * Input Parameters:
+ *   priv   - Device-specific state data
+ *
+ * Returned Value:
+ *   true: Not full
+ *
+ ****************************************************************************/
+
+static inline int ssi_txfifofull(struct lm3s_spi_slave *priv)
+{
+  return (ssi_getreg(priv, LM3S_SSI_SR_OFFSET) & SSI_SR_TNF) == 0;
+}
+
+/****************************************************************************
+ * Name: ssi_rxfifoempty
+ *
+ * Description:
+ *   Return true if the Rx FIFO is empty
+ *
+ * Input Parameters:
+ *   priv   - Device-specific state data
+ *
+ * Returned Value:
+ *   true: Not empty
+ *
+ ****************************************************************************/
+
+static inline int ssi_rxfifoempty(struct lm3s_spi_slave *priv)
+{
+  return (ssi_getreg(priv, LM3S_SSI_SR_OFFSET) & SSI_SR_RNE) == 0;
+}
+
+/****************************************************************************
+ * Name: ssi_performtx
+ *
+ * Description:
+ *   If the Tx FIFO is empty, then transfer as many words as we can to
+ *   the FIFO.
+ *
+ * Input Parameters:
+ *   priv   - Device-specific state data
+ *
+ * Returned Value:
+ *   The number of words written to the Tx FIFO (a value from 0 to 8,
+ *   inclusive).
+ *
+ ****************************************************************************/
+
+#if CONFIG_SSI_TXLIMIT == 1 && defined(CONFIG_SSI_POLLWAIT)
+static inline int ssi_performtx(struct lm3s_spi_slave *priv)
+{
+  /* Check if the Tx FIFO is full and more data to transfer */
+
+  if (!ssi_txfifofull(priv) && priv->ntxwords > 0)
+    {
+      /* Transfer one word to the Tx FIFO */
+
+      priv->txword(priv);
+      priv->ntxwords--;
+      return 1;
+    }
+  return 0;
+}
+
+#else /* CONFIG_SSI_TXLIMIT == 1 CONFIG_SSI_POLLWAIT */
+
+static int ssi_performtx(struct lm3s_spi_slave *priv)
+{
+#ifndef CONFIG_SSI_POLLWAIT
+  uint32_t regval;
+#endif
+  int ntxd = 0;  /* Number of words written to Tx FIFO */
+
+  /* Check if the Tx FIFO is full */
+
+  if (!ssi_txfifofull(priv))
+    {
+      /* Not full.. Check if all of the Tx words have been sent */
+
+      if (priv->ntxwords > 0)
+        {
+          /* No.. Transfer more words until either the Tx FIFO is full or
+           * until all of the user provided data has been sent.
+           */
+#ifdef CONFIG_SSI_TXLIMIT
+          /* Further limit the number of words that we put into the Tx
+           * FIFO to CONFIG_SSI_TXLIMIT.  Otherwise, we could
+           * overrun the Rx FIFO on a very fast SSI bus.
+           */
+          for (; ntxd < priv->ntxwords && ntxd < CONFIG_SSI_TXLIMIT && !ssi_txfifofull(priv); ntxd++)
+#else
+          for (; ntxd < priv->ntxwords && !ssi_txfifofull(priv); ntxd++)
+#endif
+            {
+               priv->txword(priv);
+            }
+
+          /* Update the count of words to to transferred */
+
+          priv->ntxwords -= ntxd;
+        }
+
+      /* Check again... Now have all of the Tx words been sent? */
+
+#ifndef CONFIG_SSI_POLLWAIT
+      regval = ssi_getreg(priv, LM3S_SSI_IM_OFFSET);
+      if (priv->ntxwords > 0)
+        {
+          /* No.. Enable the Tx FIFO interrupt.  This interrupt occurs
+           * when the Tx FIFO is 1/2 full or less.
+           */
+
+#ifdef CONFIG_DEBUG
+          regval |= (SSI_IM_TX|SSI_RIS_ROR);
+#else
+          regval |= SSI_IM_TX;
+#endif
+        }
+      else
+        {
+          /* Yes.. Disable the Tx FIFO interrupt.  The final stages of
+           * the transfer will be driven by Rx FIFO interrupts.
+           */
+
+          regval &= ~(SSI_IM_TX|SSI_RIS_ROR);
+        }
+      ssi_putreg(priv, LM3S_SSI_IM_OFFSET, regval);
+#endif /* CONFIG_SSI_POLLWAIT */
+    }
+  return ntxd;
+}
+
+#endif /* CONFIG_SSI_TXLIMIT == 1 CONFIG_SSI_POLLWAIT */
+
+/****************************************************************************
+ * Name: ssi_performrx
+ *
+ * Description:
+ *   Transfer as many bytes as possible from the Rx FIFO to the user Rx
+ *   buffer (if one was provided).
+ *
+ * Input Parameters:
+ *   priv   - Device-specific state data
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+static inline void ssi_performrx(struct lm3s_spi_slave *priv)
+{
+#ifndef CONFIG_SSI_POLLWAIT
+  uint32_t regval;
+#endif
+
+  /* Loop while data is available in the Rx FIFO */
+
+  while (!ssi_rxfifoempty(priv))
+    {
+      /* Have all of the requested words been transferred from the Rx FIFO? */
+
+      if (priv->nrxwords < priv->nwords)
+        {
+          /* No.. Read more data from Rx FIFO */
+
+          priv->rxword(priv);
+          priv->nrxwords++;
+        }
+    }
+
+  /* The Rx FIFO is now empty.  While there is Tx data to be sent, the
+   * transfer will be driven by Tx FIFO interrupts.  The final part
+   * of the transfer is driven by Rx FIFO interrupts only.
+   */
+
+#ifndef CONFIG_SSI_POLLWAIT
+  regval = ssi_getreg(priv, LM3S_SSI_IM_OFFSET);
+  if (priv->ntxwords == 0 && priv->nrxwords < priv->nwords)
+    {
+       /* There are no more outgoing words to send, but there are
+        * additional incoming words expected (I would think that this
+        * a real corner case, be we will handle it with an extra
+        * interrupt, probably an Rx timeout).
+        */
+
+#ifdef CONFIG_DEBUG
+      regval |= (SSI_IM_RX|SSI_IM_RT|SSI_IM_ROR);
+#else
+      regval |= (SSI_IM_RX|SSI_IM_RT);
+#endif
+    }
+  else
+    {
+      /* No.. there are either more Tx words to send or all Rx words
+       * have received.  Disable Rx FIFO interrupts.
+       */
+
+      regval &= ~(SSI_IM_RX|SSI_IM_RT);
+    }
+  ssi_putreg(priv, LM3S_SSI_IM_OFFSET, regval);
+#endif /* CONFIG_SSI_POLLWAIT */
+}
+
+/****************************************************************************
+ * Name: ssi_transfer
+ *
+ * Description:
+ *   Exchange a block data with the SPI device
+ *
+ * Input Parameters:
+ *   priv   - Device-specific state data
+ *   txbuffer - The buffer of data to send to the device (may be NULL).
+ *   rxbuffer - The buffer to receive data from the device (may be NULL).
+ *   nwords   - The total number of words to be exchanged.  If the interface
+ *              uses <= 8 bits per word, then this is the number of uint8_t's;
+ *              if the interface uses >8 bits per word, then this is the
+ *              number of uint16_t's
+ *
+ * Returned Value:
+ *   0: success, <0:Negated error number on failure
+ *
+ * Assumption:
+ *   Caller holds a lock on the SPI bus (if CONFIG_SPI_OWNBUS not defined)
+ *
+ ****************************************************************************/
+
+static int ssi_transfer(struct lm3s_spi_slave *priv, const void *txbuffer,
+                        void *rxbuffer, unsigned int nwords)
+{
+#ifndef CONFIG_SSI_POLLWAIT
+  irqstate_t flags;
+#endif
+  int ntxd;
+
+  ssidbg("txbuffer: %p rxbuffer: %p nwords: %d\n", txbuffer, rxbuffer, nwords);
+
+  /* Set up to perform the transfer */
+
+  priv->txbuffer     = (uint8_t*)txbuffer; /* Source buffer */
+  priv->rxbuffer     = (uint8_t*)rxbuffer; /* Destination buffer */
+  priv->ntxwords     = nwords;             /* Number of words left to send */
+  priv->nrxwords     = 0;                  /* Number of words received */
+  priv->nwords       = nwords;             /* Total number of exchanges */
+
+  /* Set up the low-level data transfer function pointers */
+
+  if (priv->nbits > 8)
+    {
+      priv->txword = ssi_txuint16;
+      priv->rxword = ssi_rxuint16;
+    }
+  else
+    {
+      priv->txword = ssi_txuint8;
+      priv->rxword = ssi_rxuint8;
+    }
+
+  if (!txbuffer)
+    {
+      priv->txword = ssi_txnull;
+    }
+
+  if (!rxbuffer)
+    {
+      priv->rxword = ssi_rxnull;
+    }
+
+  /* Prime the Tx FIFO to start the sequence (saves one interrupt).
+   * At this point, all SSI interrupts should be disabled, but the
+   * operation of ssi_performtx() will set up the interrupts
+   * approapriately (if nwords > TxFIFO size).
+   */
+
+#ifndef CONFIG_SSI_POLLWAIT
+  flags = irqsave();
+  ssivdbg("ntxwords: %d nrxwords: %d nwords: %d SR: %08x\n",
+          priv->ntxwords, priv->nrxwords, priv->nwords,
+          ssi_getreg(priv, LM3S_SSI_SR_OFFSET));
+
+  ntxd  = ssi_performtx(priv);
+
+  /* For the case where nwords < Tx FIFO size, ssi_performrx will
+   * configure interrupts correctly for the final phase of the
+   * the transfer.
+   */
+
+  ssi_performrx(priv);
+
+  ssivdbg("ntxwords: %d nrxwords: %d nwords: %d SR: %08x IM: %08x\n",
+          priv->ntxwords, priv->nrxwords, priv->nwords,
+          ssi_getreg(priv, LM3S_SSI_SR_OFFSET),
+          ssi_getreg(priv, LM3S_SSI_IM_OFFSET));
+
+  /* Wait for the transfer to complete.  Since there is no handshake
+   * with SPI, the following should complete even if there are problems
+   * with the transfer, so it should be safe with no timeout.
+   */
+
+  ssivdbg("Waiting for transfer complete\n");
+  irqrestore(flags);
+  do
+    {
+      ssi_semtake(&priv->xfrsem);
+    }
+  while (priv->nrxwords < priv->nwords);
+  ssidbg("Transfer complete\n");
+
+#else
+  /* Perform the transfer using polling logic.  This will totally
+   * dominate the CPU until the transfer is complete.  Only recommended
+   * if (1) your SPI is very fast, and (2) if you only use very short
+   * transfers.
+   */
+
+  do
+    {
+      /* Handle outgoing Tx FIFO transfers */
+
+      ntxd = ssi_performtx(priv);
+
+      /* Handle incoming Rx FIFO transfers */
+
+      ssi_performrx(priv);
+    }
+  while (priv->nrxwords < priv->nwords);
+#endif
+
+  return 0;
 }
 
 int spi_cs_is_valid(unsigned int bus, unsigned int cs)
 {
-  return bus == 0 && cs != 0;
+  ssidbg("%s: bus %u, cs %u\n", __func__, bus, cs);
+
+  if( get_ssibase(bus) == 0 )
+  {
+    ssidbg("%s: invalid bus\n", __func__);
+    return 0;
+  }
+
+#ifdef CONFIG_BOARD_TRANSLATE_CS
+  if( board_translate_cs(&cs, cs) != 0 )
+  {
+    ssidbg("%s: invalid cs\n", __func__);
+    return 0;
+  }
+#endif
+
+  return 1;
 }
 
 void spi_cs_activate(struct spi_slave *slave)
 {
   lm3s_gpiowrite(slave->cs, 0);
-  debug("%s: SPI_CS_GPIO:%x\n", __func__, slave->cs);
+  ssivdbg("%s: SPI_CS_GPIO:%x\n", __func__, slave->cs);
 }
 
 void spi_cs_deactivate(struct spi_slave *slave)
 {
   lm3s_gpiowrite(slave->cs, 1);
-  debug("%s: SPI_CS_GPIO:%x\n", __func__, slave->cs);
+  ssivdbg("%s: SPI_CS_GPIO:%x\n", __func__, slave->cs);
 }
 
 void spi_init()
 {
+  //ssidbg("%s\n", __func__);
+
   uint32_t regval;
 
   regval = getreg32(LM3S_SYSCON_RCGC1);
   regval |= SYSCON_RCGC1_SSI0;
   putreg32(regval, LM3S_SYSCON_RCGC1);
+}
 
-  /* Set all CR1 fields to reset state.  This will be master mode. */
-
-  ssi_putreg(LM3S_SSI_CR1_OFFSET, 0);
-
-  /* Set all CR0 fields to the reset state. This will also select Freescale SPI mode. */
-
-  ssi_putreg(LM3S_SSI_CR0_OFFSET, 0);
-
-  /* Disable all SSI interrupt sources. */
-
-  ssi_putreg(LM3S_SSI_IM_OFFSET, 0);
+void spi_set_speed(struct spi_slave *slave, uint hz)
+{
+  struct lm3s_spi_slave *lss = to_lm3s_spi_slave(slave);
+  ssi_setfrequency(lss, hz);
 }
 
 struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
                 unsigned int max_hz, unsigned int mode)
 {
+  ssidbg("%s: bus %u, cs %u, max_hz %u, mode %u\n", __func__, bus, cs, max_hz, mode);
+
+  uint32_t ssi_base = get_ssibase(bus);
+  if( !ssi_base )
+  {
+    ssidbg("%s: invalid bus\n", __func__);
+    return 0;
+  }
+
+#ifdef CONFIG_BOARD_TRANSLATE_CS
+  if( board_translate_cs(&cs, cs) != 0 )
+  {
+    ssidbg("%s: invalid cs\n", __func__);
+    return 0;
+  }
+#endif
+
   struct lm3s_spi_slave *lss;
   lss = (struct lm3s_spi_slave *)malloc(sizeof(*lss));
   if (!lss)
+  {
+    ssidbg("%s: fail to allocate memory for lm3s_spi_slave\n", __func__);
     return 0;
+  }
 
   memset(lss, 0, sizeof(*lss));
 
   lss->slave.bus = bus;
   lss->slave.cs = cs;
+  lss->base = ssi_base;
 
   ssi_setmode(lss, mode);
-
   ssi_setbits(lss, 8);
-
-  ssi_setfrequency(lss, 400000);
+  ssi_setfrequency(lss, max_hz);
 
   return &lss->slave;
 }
 
 void spi_free_slave(struct spi_slave *slave)
 {
+  ssidbg("%s\n", __func__);
   struct lm3s_spi_slave *lss = to_lm3s_spi_slave(slave);
   free(lss);
 }
@@ -373,33 +895,65 @@ int spi_claim_bus(struct spi_slave *slave)
 {
   struct lm3s_spi_slave *lss = to_lm3s_spi_slave(slave);
 
-  debug("%s: bus:%i cs:%i\n", __func__, slave->bus, slave->cs);
+  ssivdbg("%s: bus:%i cs:%x\n", __func__, slave->bus, slave->cs);
+
+  /* Set CR1 */
+    ssi_putreg(lss, LM3S_SSI_CR1_OFFSET, 0);
 
   /* Set CPDVSR */
+  ssi_putreg(lss, LM3S_SSI_CPSR_OFFSET, lss->cpsdvsr);
 
-  ssi_putreg(priv, LM3S_SSI_CPSR_OFFSET, lss->cpsdvsr);
+  /* Set CR0 */
+  ssi_putreg(lss, LM3S_SSI_CR0_OFFSET, lss->cr0);
 
-  /* Set CR0 and CR1 */
-
-  ssi_putreg(LM3S_SSI_CR0_OFFSET, lss->cr0);
-  ssi_putreg(LM3S_SSI_CR1_OFFSET, lss->cr1);
-
-  ssi_enable();
+  ssi_enable(lss);
 
   return 0;
 }
 
 void spi_release_bus(struct spi_slave *slave)
 {
-  //struct lm3s_spi_slave *lss = to_lm3s_spi_slave(slave);
+  struct lm3s_spi_slave *lss = to_lm3s_spi_slave(slave);
 
-  debug("%s: bus:%i cs:%i\n", __func__, slave->bus, slave->cs);
+  ssivdbg("%s: bus:%i cs:%x\n", __func__, slave->bus, slave->cs);
 
-  ssi_disable();
+  ssi_disable(lss);
+}
+
+static inline void spi_xferdone(struct spi_slave *slave, unsigned long flags)
+{
+  if (flags & SPI_XFER_END)
+    spi_cs_deactivate(slave);
 }
 
 int spi_xfer(struct spi_slave *slave, unsigned int bitlen, const void *dout,
                 void *din, unsigned long flags)
 {
+  struct lm3s_spi_slave *lss = to_lm3s_spi_slave(slave);
+  uint bytes = bitlen / 8;
+
+  ssivdbg("%s: bus:%i cs:%i bitlen:%i bytes:%i flags:%lx\n", __func__,
+        slave->bus, slave->cs, bitlen, bytes, flags);
+
+  if (bitlen == 0)
+  {
+    spi_xferdone(slave, flags);
+    return 0;
+  }
+
+  /* we can only do 8 bit transfers */
+  if (bitlen % 8)
+  {
+    spi_xferdone(slave, flags | SPI_XFER_END);
+    return 0;
+  }
+
+  if (flags & SPI_XFER_BEGIN)
+    spi_cs_activate(slave);
+
+  ssi_transfer(lss, dout, din, bytes);
+
+  spi_xferdone(slave, flags);
+
   return 0;
 }

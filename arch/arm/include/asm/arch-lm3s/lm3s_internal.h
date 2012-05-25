@@ -377,9 +377,9 @@
 #  define GPIO_SSI0_CLK    (GPIO_FUNC_PFIO      | GPIO_PORTA | GPIO_DF(1) | 2)       /* PA2: SSI0 clock (SSI0Clk) */
 #  define GPIO_SSI0_RX     (GPIO_FUNC_PFINPUT   | GPIO_PORTA | GPIO_DF(1) | 4)       /* PA4: SSI0 receive (SSI0Rx) */
 #  define GPIO_SSI0_TX     (GPIO_FUNC_PFOUTPUT  | GPIO_PORTA | GPIO_DF(1) | 5)       /* PA5: SSI0 transmit (SSI0Tx) */
-#  define GPIO_SSI0_CS_EE  (GPIO_FUNC_OUTPUT    | GPIO_PORTA | 6)                    /* PA6: SSI0 EEPROM chip select */
-#  define GPIO_SSI0_CS_SF  (GPIO_FUNC_OUTPUT    | GPIO_PORTA | 7)                    /* PA6: SSI0 Serial Flash chip select */
-#  define GPIO_SSI0_CS_ETH (GPIO_FUNC_OUTPUT    | GPIO_PORTA | 3)                    /* PA3: SSI0 ETH chip select (SSI0Fss) */
+#  define GPIO_SSI0_CS_SF  (GPIO_FUNC_OUTPUT    | GPIO_PORTA | 7 | GPIO_VALUE_ONE)   /* PA7: SSI0 Serial Flash chip select */
+#  define GPIO_SSI0_CS_EE  (GPIO_FUNC_OUTPUT    | GPIO_PORTA | 6 | GPIO_VALUE_ONE)   /* PA6: SSI0 EEPROM chip select */
+#  define GPIO_SSI0_CS_ETH (GPIO_FUNC_OUTPUT    | GPIO_PORTA | 3 | GPIO_VALUE_ONE)   /* PA3: SSI0 ETH chip select */
 
 #  define GPIO_POWER_HOLD  (GPIO_FUNC_OUTPUT    | GPIO_PORTF | 6)                    /* PF6: Power Hold (output) */
 #  define GPIO_POWER_FAIL  (GPIO_FUNC_INPUT     | GPIO_PORTB | 6)                    /* PB6: Power Fail (input)  */

@@ -115,7 +115,16 @@
 /*
  * SPI configuration
  */
+#define CONFIG_SPI
 #define CONFIG_LM3S_SPI
+#define CONFIG_SSI_POLLWAIT
+
+/*
+ * SPI FLASH configuration
+ */
+#define CONFIG_SPI_FLASH
+#define CONFIG_SPI_FLASH_STMICRO
+#define CONFIG_BOARD_TRANSLATE_CS
 
 /*
  * No support for IRQs
@@ -214,6 +223,7 @@
 #define CONFIG_CMD_ENV
 #define CONFIG_CMD_ECHO   /* echo arguments   */
 #define CONFIG_CMD_RUN    /* run command in env variable  */
+#define CONFIG_CMD_SF
 
 #undef CONFIG_CMD_NAND
 #undef CONFIG_CMD_BDI    /* bdinfo     */

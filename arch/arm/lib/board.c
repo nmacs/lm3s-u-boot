@@ -86,6 +86,10 @@ extern void rtl8019_get_enetaddr (uchar * addr);
 #include <i2c.h>
 #endif
 
+#if defined(CONFIG_SPI)
+#include <spi.h>
+#endif
+
 extern size_t* _u_boot_code_start;
 extern size_t* _u_boot_code_end;
 extern size_t* _u_boot_bss_start;
@@ -266,6 +270,9 @@ init_fnc_t *init_sequence[] = {
 	init_func_i2c,
 #endif
 	dram_init,		/* configure available RAM banks */
+#if defined(CONFIG_SPI)
+	spi_init,
+#endif
 	NULL,
 };
 
