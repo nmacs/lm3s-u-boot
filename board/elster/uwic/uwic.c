@@ -154,6 +154,7 @@ static void uwic_setup_pins()
   lm3s_configgpio(GPIO_SSI0_CS_EE);
   lm3s_configgpio(GPIO_SSI0_CS_SF);
   lm3s_configgpio(GPIO_SSI0_CS_ETH);
+  lm3s_configgpio(GPIO_ETH_INTRN);
 
   lm3s_configgpio(GPIO_POWER_HOLD);
   lm3s_configgpio(GPIO_POWER_FAIL);

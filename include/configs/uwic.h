@@ -55,9 +55,9 @@
 #define CONFIG_LM3S_UART_BOOT		0
 
 /*
- * Linux machine type, reuse the 24xx machine ID
+ * Linux machine type
  */
-#define CONFIG_LM3S_MACHID		MACH_TYPE_LPC24XX
+#define CONFIG_LM3S_MACHID		10001
 
 /*
  * LPC1788 built-in FLASH
@@ -168,6 +168,11 @@
 #define CONFIG_ZERO_BOOTDELAY_CHECK
 
 /*
+ * Supported compression algorithms
+ */
+#define CONFIG_GZIP
+
+/*
  * Command line configuration.
  */
 #include <config_cmd_default.h>
@@ -218,6 +223,13 @@
 //#define CONFIG_BOOTP_BOOTFILESIZE
 
 /*
+ * BOOTM command
+ */
+#define CONFIG_CMD_BOOTM
+#define CONFIG_SYS_BOOTM_LEN (4*1024*1024) // Set max gzip linux image to 4 Mbytes (on-board FLASH size)
+#define CONFIG_BOOTM_LINUX
+
+/*
  * Other commands
  */
 #define CONFIG_CMD_ENV
@@ -260,8 +272,9 @@
 #define CONFIG_DISPLAY_CPUINFO
 #define CONFIG_UART0_SERIAL_CONSOLE
 
-#define DEBUG
+//#define DEBUG
 
-#undef CONFIG_BOOTCOMMAND
+/*#define CONFIG_BOOTARGS "earlyprintk ignore_loglevel root=/dev/nfs nfsroot=192.168.100.2:/nfsroot ip=192.168.100.10::192.168.100.1:255.255.255.0"*/
+#define CONFIG_BOOTCOMMAND "bootm 0x60400000"
 
 #endif /* __EA1788_H */

@@ -91,8 +91,8 @@ extern int board_translate_cs(unsigned int* translated_cs, unsigned int cs);
 #define to_lm3s_spi_slave(s) container_of(s, struct lm3s_spi_slave, slave)
 #define SSI_BASE LM3S_SSI0_BASE
 
-#define SSI_DEBUG          /* Define to enable debug */
-#define SSI_VERBOSE_DEBUG  /* Define to enable verbose debug */
+//#define SSI_DEBUG          /* Define to enable debug */
+//#define SSI_VERBOSE_DEBUG  /* Define to enable verbose debug */
 
 #ifdef SSI_DEBUG
 #  define ssidbg  debug
@@ -898,7 +898,7 @@ int spi_claim_bus(struct spi_slave *slave)
   ssivdbg("%s: bus:%i cs:%x\n", __func__, slave->bus, slave->cs);
 
   /* Set CR1 */
-    ssi_putreg(lss, LM3S_SSI_CR1_OFFSET, 0);
+  ssi_putreg(lss, LM3S_SSI_CR1_OFFSET, 0);
 
   /* Set CPDVSR */
   ssi_putreg(lss, LM3S_SSI_CPSR_OFFSET, lss->cpsdvsr);
