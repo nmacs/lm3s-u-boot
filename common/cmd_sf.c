@@ -17,8 +17,16 @@
 # define CONFIG_SF_DEFAULT_MODE		SPI_MODE_3
 #endif
 
-static struct spi_flash *flash;
+static struct spi_flash *flash = 0;
 
+
+struct spi_flash* get_current_flash()
+{
+  if( flash == 0 )
+    puts("WARNING: No SPI flash selected. Please run `sf probe'\n");
+
+  return flash;
+}
 
 /*
  * This function computes the length argument for the erase command.

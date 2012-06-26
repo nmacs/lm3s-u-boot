@@ -118,6 +118,7 @@
 #define CONFIG_SPI
 #define CONFIG_LM3S_SPI
 #define CONFIG_SSI_POLLWAIT
+#define CONFIG_SSI_TXLIMIT 8
 
 /*
  * SPI FLASH configuration
@@ -170,7 +171,7 @@
 /*
  * Supported compression algorithms
  */
-#define CONFIG_GZIP
+//#define CONFIG_GZIP
 
 /*
  * Command line configuration.
@@ -194,40 +195,22 @@
 #define CONFIG_SYS_MEMTEST_END		(PHYS_SDRAM_1 + PHYS_SDRAM_1_SIZE)
 
 /*
- * Support for various capabilities
- */
-//#define CONFIG_AUTO_COMPLETE
-//#define CONFIG_CMDLINE_EDITING
-//#define CONFIG_SYS_LOADS_BAUD_CHANGE
-
-/*
- * Network setup
- */
-//#define CONFIG_NETMASK		255.255.255.0
-//#define CONFIG_IPADDR		192.168.1.101
-//#define CONFIG_SERVERIP		192.168.1.41
-//#define CONFIG_GATEWAYIP	192.168.1.1
-//#define CONFIG_ETHADDR		00:E0:0C:00:00:01
-
-//#define CONFIG_BOOTFILE		uImage
-//#define CONFIG_LOADADDR		0xA0100000
-//#define CONFIG_ROOTPATH		/home/user/dev/rootfs
-
-/*
- * BOOTP options
- */
-//#define CONFIG_BOOTP_SUBNETMASK
-//#define CONFIG_BOOTP_GATEWAY
-//#define CONFIG_BOOTP_BOOTPATH
-//#define CONFIG_BOOTP_HOSTNAME
-//#define CONFIG_BOOTP_BOOTFILESIZE
-
-/*
  * BOOTM command
  */
-#define CONFIG_CMD_BOOTM
+//#define CONFIG_CMD_BOOTM
 #define CONFIG_SYS_BOOTM_LEN (4*1024*1024) // Set max gzip linux image to 4 Mbytes (on-board FLASH size)
-#define CONFIG_BOOTM_LINUX
+//#define CONFIG_BOOTM_LINUX
+
+/*
+ * File systems
+ */
+#define CONFIG_CMD_JFFS2
+#define CONFIG_JFFS2_DEV "serial0"
+#define CONFIG_CMD_SF
+#define CONFIG_SF_DEFAULT_SPEED 5000000
+#define CONFIG_JFFS2_SERIAL
+#define DEFAULT_EMPTY_SCAN_SIZE 256
+//#define CONFIG_JFFS2_SUMMARY
 
 /*
  * Other commands
@@ -235,7 +218,6 @@
 #define CONFIG_CMD_ENV
 #define CONFIG_CMD_ECHO   /* echo arguments   */
 #define CONFIG_CMD_RUN    /* run command in env variable  */
-#define CONFIG_CMD_SF
 
 #undef CONFIG_CMD_NAND
 #undef CONFIG_CMD_BDI    /* bdinfo     */
@@ -274,7 +256,11 @@
 
 //#define DEBUG
 
+/*
+ * Boot options
+ */
 /*#define CONFIG_BOOTARGS "earlyprintk ignore_loglevel root=/dev/nfs nfsroot=192.168.100.2:/nfsroot ip=192.168.100.10::192.168.100.1:255.255.255.0"*/
+#define CONFIG_BOOTARGS "root=/dev/mtdblock0 rw rootfstype=jffs2"
 #define CONFIG_BOOTCOMMAND "bootm 0x60400000"
 
 #endif /* __EA1788_H */

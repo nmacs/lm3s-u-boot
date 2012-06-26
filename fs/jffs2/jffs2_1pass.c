@@ -390,6 +390,59 @@ static inline void *get_node_mem_nor(u32 off, void *ext_buf)
 #endif
 
 
+#if defined(CONFIG_CMD_SF)
+
+#include <spi_flash.h>
+
+static int read_serial_cached(u32 off, u32 size, u_char *buf)
+{
+  extern struct spi_flash* get_current_flash();
+  if( !get_current_flash() )
+    return -1;
+  spi_flash_read(get_current_flash(), off, size, buf);
+  return 0;
+}
+
+static void *get_fl_mem_serial(u32 off, u32 size, void *ext_buf)
+{
+  u_char *buf = ext_buf ? (u_char*)ext_buf : (u_char*)malloc(size);
+
+  if (NULL == buf) {
+    printf("get_fl_mem_serial: can't alloc %d bytes\n", size);
+    return NULL;
+  }
+  if (read_serial_cached(off, size, buf) < 0) {
+    if (!ext_buf)
+      free(buf);
+    return NULL;
+  }
+
+  return buf;
+}
+
+static void *get_node_mem_serial(u32 off, void *ext_buf)
+{
+  struct jffs2_unknown_node node;
+  void *ret = NULL;
+
+  if (NULL == get_fl_mem_serial(off, sizeof(node), &node))
+    return NULL;
+
+  if (!(ret = get_fl_mem_serial(off, node.magic ==
+             JFFS2_MAGIC_BITMASK ? node.totlen : sizeof(node),
+             ext_buf))) {
+    printf("off = %#x magic %#x type %#x node.totlen = %d\n",
+           off, node.magic, node.nodetype, node.totlen);
+  }
+  return ret;
+}
+
+static void put_fl_mem_serial(void *buf)
+{
+  free(buf);
+}
+#endif
+
 /*
  * Generic jffs2 raw memory and node read routines.
  *
@@ -413,6 +466,11 @@ static inline void *get_fl_mem(u32 off, u32 size, void *ext_buf)
 	case MTD_DEV_TYPE_ONENAND:
 		return get_fl_mem_onenand(off, size, ext_buf);
 		break;
+#endif
+#if defined(CONFIG_JFFS2_SERIAL) && defined(CONFIG_CMD_SF)
+  case MTD_DEV_TYPE_SERIAL:
+    return get_fl_mem_serial(off, size, ext_buf);
+    break;
 #endif
 	default:
 		printf("get_fl_mem: unknown device type, " \
@@ -442,8 +500,13 @@ static inline void *get_node_mem(u32 off, void *ext_buf)
 		return get_node_mem_onenand(off, ext_buf);
 		break;
 #endif
+#if defined(CONFIG_JFFS2_SERIAL) && defined(CONFIG_CMD_SF)
+  case MTD_DEV_TYPE_SERIAL:
+    return get_node_mem_serial(off, ext_buf);
+    break;
+#endif
 	default:
-		printf("get_fl_mem: unknown device type, " \
+		printf("get_node_mem: unknown device type, " \
 			"using raw offset!\n");
 	}
 	return (void*)off;
@@ -461,6 +524,10 @@ static inline void put_fl_mem(void *buf, void *ext_buf)
 #if defined(CONFIG_JFFS2_NAND) && defined(CONFIG_CMD_NAND)
 	case MTD_DEV_TYPE_NAND:
 		return put_fl_mem_nand(buf);
+#endif
+#if defined(CONFIG_JFFS2_SERIAL) && defined(CONFIG_CMD_SF)
+  case MTD_DEV_TYPE_SERIAL:
+    return put_fl_mem_serial(buf);
 #endif
 #if defined(CONFIG_CMD_ONENAND)
 	case MTD_DEV_TYPE_ONENAND:
@@ -720,7 +787,6 @@ jffs2_1pass_read_inode(struct b_lists *pL, u32 inode, char *dest)
 		put_fl_mem(jNode, pL->readbuf);
 	}
 #endif
-
 	for (b = pL->frag.listHead; b != NULL; b = b->next) {
 		jNode = (struct jffs2_raw_inode *) get_node_mem(b->offset,
 								pL->readbuf);
@@ -1129,7 +1195,6 @@ jffs2_1pass_search_list_inodes(struct b_lists * pL, const char *fname, u32 pino)
 	char tmp[256];
 	char working_tmp[256];
 	char *c;
-
 	/* discard any leading slash */
 	i = 0;
 	while (fname[i] == '/')
@@ -1428,7 +1493,9 @@ dump_dirents(struct b_lists *pL)
 }
 #endif
 
-#define DEFAULT_EMPTY_SCAN_SIZE	4096
+#ifndef DEFAULT_EMPTY_SCAN_SIZE
+#  define DEFAULT_EMPTY_SCAN_SIZE	4096
+#endif
 
 static inline uint32_t EMPTY_SCAN_SIZE(uint32_t sector_size)
 {
@@ -1734,7 +1801,7 @@ jffs2_1pass_build_lists(struct part_info * part)
 #endif
 
 	/* give visual feedback that we are done scanning the flash */
-	led_blink(0x0, 0x0, 0x1, 0x1);	/* off, forever, on 100ms, off 100ms */
+	//led_blink(0x0, 0x0, 0x1, 0x1);	/* off, forever, on 100ms, off 100ms */
 	return 1;
 }
 
@@ -1780,6 +1847,7 @@ jffs2_get_list(struct part_info * part, const char *who)
 			return NULL;
 		}
 	}
+
 	return (struct b_lists *)part->jffs2_priv;
 }
 
@@ -1850,10 +1918,8 @@ jffs2_1pass_info(struct part_info * part)
 	struct b_jffs2_info info;
 	struct b_lists *pl;
 	int i;
-
 	if (! (pl  = jffs2_get_list(part, "info")))
 		return 0;
-
 	jffs2_1pass_fill_info(pl, &info);
 	for (i = 0; i < JFFS2_NUM_COMPR; i++) {
 		printf ("Compression: %s\n"
@@ -1865,5 +1931,6 @@ jffs2_1pass_info(struct part_info * part)
 			info.compr_info[i].compr_sum,
 			info.compr_info[i].decompr_sum);
 	}
+
 	return 1;
 }

@@ -100,6 +100,10 @@
 #include <nand.h>
 #endif
 
+#if defined(CONFIG_CMD_SF)
+#include <spi_flash.h>
+#endif
+
 #if defined(CONFIG_CMD_ONENAND)
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/onenand.h>
@@ -180,6 +184,17 @@ static int mtd_device_validate(u8 type, u8 num, u32 *size)
 #else
 		printf("support for FLASH devices not present\n");
 #endif
+  } else if (type == MTD_DEV_TYPE_SERIAL) {
+#if defined(CONFIG_JFFS2_SERIAL) && defined(CONFIG_CMD_SF)
+    extern struct spi_flash* get_current_flash();
+    if( get_current_flash() )
+    {
+      *size = get_current_flash()->size;
+      return 0;
+    }
+#else
+    printf("support for SERIAL devices not present\n");
+#endif
 	} else if (type == MTD_DEV_TYPE_NAND) {
 #if defined(CONFIG_JFFS2_NAND) && defined(CONFIG_CMD_NAND)
 		if (num < CONFIG_SYS_MAX_NAND_DEVICE) {
@@ -229,6 +244,9 @@ static int mtd_id_parse(const char *id, const char **ret_id, u8 *dev_type, u8 *d
 	} else if (strncmp(p, "onenand", 7) == 0) {
 		*dev_type = MTD_DEV_TYPE_ONENAND;
 		p += 7;
+  } else if (strncmp(p, "serial", 6) == 0 ) {
+    *dev_type = MTD_DEV_TYPE_SERIAL;
+    p += 6;
 	} else {
 		printf("incorrect device type in %s\n", id);
 		return 1;
@@ -266,6 +284,25 @@ static inline u32 get_part_sector_size_nand(struct mtdids *id)
 #else
 	BUG();
 	return 0;
+#endif
+}
+
+/**
+ * Calculate sector size.
+ *
+ * @return sector size
+ */
+static inline u32 get_part_sector_size_serial()
+{
+#if defined(CONFIG_JFFS2_SERIAL) && defined(CONFIG_CMD_SF)
+  struct spi_flash* get_current_flash();
+  if( get_current_flash() )
+    return get_current_flash()->sector_size;
+  else
+    return 0;
+#else
+  BUG();
+  return 0;
 #endif
 }
 
@@ -328,6 +365,8 @@ static inline u32 get_part_sector_size(struct mtdids *id, struct part_info *part
 		return get_part_sector_size_nor(id, part);
 	else if (id->type == MTD_DEV_TYPE_ONENAND)
 		return get_part_sector_size_onenand();
+  else if (id->type == MTD_DEV_TYPE_SERIAL)
+    return get_part_sector_size_serial();
 	else
 		DEBUGF("Error: Unknown device type.\n");
 
@@ -602,14 +641,12 @@ int do_jffs2_fsinfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		/* check partition type for cramfs */
 		fsname = (cramfs_check(part) ? "CRAMFS" : "JFFS2");
 		printf("### filesystem type is %s\n", fsname);
-
 		if (cramfs_check(part)) {
 			ret = cramfs_info (part);
 		} else {
 			/* if this is not cramfs assume jffs2 */
 			ret = jffs2_1pass_info(part);
 		}
-
 		return ret ? 0 : 1;
 	}
 	return 1;
