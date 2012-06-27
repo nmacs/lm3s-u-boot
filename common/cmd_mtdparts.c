@@ -1053,6 +1053,9 @@ int mtd_id_parse(const char *id, const char **ret_id, u8 *dev_type, u8 *dev_num)
 	} else if (strncmp(p, "onenand", 7) == 0) {
 		*dev_type = MTD_DEV_TYPE_ONENAND;
 		p += 7;
+  } else if (strncmp(p, "serial", 6) == 0) {
+    *dev_type = MTD_DEV_TYPE_SERIAL;
+    p += 6;
 	} else {
 		printf("incorrect device type in %s\n", id);
 		return 1;
@@ -1744,6 +1747,19 @@ int mtdparts_init(void)
 			return 1;
 		}
 	}
+
+	/* if mtdparts varible is empty try to use defaults */
+  if (!parts) {
+    if (mtdparts_default) {
+      debug("mtdparts variable not defined, using default\n");
+      parts = mtdparts_default;
+      setenv("mtdparts", (char *)parts);
+    } else {
+      printf("mtdparts not defined, no default present\n");
+      return 1;
+    }
+  }
+
 	if (strlen(ids) > MTDIDS_MAXLEN - 1) {
 		printf("mtdids too long (> %d)\n", MTDIDS_MAXLEN);
 		return 1;

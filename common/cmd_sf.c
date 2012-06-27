@@ -19,6 +19,11 @@
 
 static struct spi_flash *flash = 0;
 
+#ifdef CONFIG_MTD_DEVICE
+#include <linux/mtd/mtd.h>
+#include <jffs2/load_kernel.h>
+struct mtd_info serial_mtd;
+#endif
 
 struct spi_flash* get_current_flash()
 {
@@ -68,6 +73,45 @@ static int sf_parse_len_arg(char *arg, ulong *len)
 	return 1;
 }
 
+#ifdef CONFIG_MTD_DEVICE
+int serial_mtd_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u_char *buf)
+{
+  struct spi_flash *flash = mtd->priv;
+  if( spi_flash_read(flash, from, len, buf) )
+    return -1;
+
+  *retlen = len;
+
+  return 0;
+}
+
+int serial_mtd_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, const u_char *buf)
+{
+  struct spi_flash *flash = mtd->priv;
+  if( spi_flash_write(flash, to, len, buf) )
+    return -1;
+
+  *retlen = len;
+
+  return 0;
+}
+
+int serial_mtd_erase(struct mtd_info *mtd, struct erase_info *instr)
+{
+  struct spi_flash *flash = mtd->priv;
+  if( spi_flash_erase(flash, instr->addr, instr->len) )
+  {
+    instr->fail_addr = instr->addr;
+    instr->callback(instr);
+    return -1;
+  }
+
+  instr->callback(instr);
+  return 0;
+}
+
+#endif
+
 static int do_spi_flash_probe(int argc, char * const argv[])
 {
 	unsigned int bus = 0;
@@ -113,6 +157,26 @@ static int do_spi_flash_probe(int argc, char * const argv[])
 	if (flash)
 		spi_flash_free(flash);
 	flash = new;
+
+#ifdef CONFIG_MTD_DEVICE
+  /*
+   * Add MTD device so that we can reference it later
+   * via the mtdcore infrastructure (e.g. ubi).
+   */
+  serial_mtd.type = MTD_DATAFLASH;
+  serial_mtd.flags = MTD_WRITEABLE;
+  serial_mtd.name = "serial0";
+  serial_mtd.size = flash->size;
+  serial_mtd.erasesize = flash->sector_size;
+  serial_mtd.writesize = 1;
+  serial_mtd.index = 0;
+  serial_mtd.read = serial_mtd_read;
+  serial_mtd.write = serial_mtd_write;
+  serial_mtd.erase = serial_mtd_erase;
+  serial_mtd.priv = flash;
+
+  add_mtd_device(&serial_mtd);
+#endif
 
 	return 0;
 }
