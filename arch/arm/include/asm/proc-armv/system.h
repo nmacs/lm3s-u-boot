@@ -12,6 +12,8 @@
 
 #include <linux/config.h>
 
+#ifndef __thumb__
+
 /*
  * Save the current interrupt enable state & disable IRQs
  */
@@ -165,5 +167,17 @@ static inline unsigned long __xchg(unsigned long x, volatile void *ptr, int size
 
 	return ret;
 }
+
+#else // __thumb__
+
+#define local_irq_save(x)    do {} while(0)
+#define local_irq_enable()   do {} while(0)
+#define local_irq_disable()  do {} while(0)
+#define __stf()              do {} while(0)
+#define __clf()              do {} while(0)
+#define local_save_flags(x)  do {} while(0)
+#define local_irq_restore(x) do {} while(0)
+
+#endif // __thumb__
 
 #endif
