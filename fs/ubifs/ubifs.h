@@ -462,9 +462,13 @@ static inline ino_t parent_ino(struct dentry *dentry)
 /* Version of this UBIFS implementation */
 #define UBIFS_VERSION 1
 
+#ifdef DEBUG
 /* Normal UBIFS messages */
-#define ubifs_msg(fmt, ...) \
+#  define ubifs_msg(fmt, ...) \
 		printk(KERN_NOTICE "UBIFS: " fmt "\n", ##__VA_ARGS__)
+#else
+#  define ubifs_msg(fmt, ...) do {} while(0)
+#endif
 /* UBIFS error messages */
 #define ubifs_err(fmt, ...)                                                  \
 	printk(KERN_ERR "UBIFS error (pid %d): %s: " fmt "\n", 0, \
