@@ -202,15 +202,29 @@
 //#define CONFIG_BOOTM_LINUX
 
 /*
+ * Liraries
+ */
+#define CONFIG_RBTREE
+#define CONFIG_LZO
+
+/*
  * File systems
  */
-#define CONFIG_CMD_JFFS2
-#define CONFIG_JFFS2_DEV "serial0"
+//#define CONFIG_CMD_JFFS2
+//#define CONFIG_JFFS2_DEV "serial0"
 #define CONFIG_CMD_SF
 #define CONFIG_SF_DEFAULT_SPEED 5000000
-#define CONFIG_JFFS2_SERIAL
-#define DEFAULT_EMPTY_SCAN_SIZE 256
-//#define CONFIG_JFFS2_SUMMARY
+//#define CONFIG_JFFS2_SERIAL
+//#define DEFAULT_EMPTY_SCAN_SIZE 256
+
+#define CONFIG_MTD_DEVICE
+#define CONFIG_CMD_MTDPARTS
+#define CONFIG_MTD_PARTITIONS
+#define CONFIG_CMD_UBI
+#define CONFIG_CMD_UBIFS
+
+#define MTDIDS_DEFAULT "serial0=flash"
+#define MTDPARTS_DEFAULT "mtdparts=flash:-(root)"
 
 /*
  * Other commands
@@ -260,7 +274,7 @@
  * Boot options
  */
 /*#define CONFIG_BOOTARGS "earlyprintk ignore_loglevel root=/dev/nfs nfsroot=192.168.100.2:/nfsroot ip=192.168.100.10::192.168.100.1:255.255.255.0"*/
-#define CONFIG_BOOTARGS "root=/dev/mtdblock0 rw rootfstype=jffs2"
-#define CONFIG_BOOTCOMMAND "bootm 0x60400000"
+#define CONFIG_BOOTARGS "ubi.mtd=0 root=ubi0:rootfs rootfstype=ubifs"
+#define CONFIG_BOOTCOMMAND "sf probe 0;ubi part serial0,0;ubifsmount rootfs;ubifsload 0x60400000 /boot/linux.bin;bootm 0x60400000"
 
 #endif /* __EA1788_H */
