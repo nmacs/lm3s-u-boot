@@ -177,23 +177,23 @@ int serial_init(void)
    * this pin configuration -- whether or not a serial console is selected.
    */
 
-#ifndef CONFIG_UART0_DISABLE
-  regval  = getreg32(LM3S_SYSCON_RCGC1);
-  regval |= SYSCON_RCGC1_UART0;
-  putreg32(regval, LM3S_SYSCON_RCGC1);
+regval  = getreg32(LM3S_SYSCON_RCGC1);
 
-  //lm3s_configgpio(GPIO_UART0_RX);
-  //lm3s_configgpio(GPIO_UART0_TX);
+#ifndef CONFIG_UART0_DISABLE
+  regval |= SYSCON_RCGC1_UART0;
 #endif
 
 #ifndef CONFIG_UART1_DISABLE
-  regval  = getreg32(LM3S_SYSCON_RCGC1);
   regval |= SYSCON_RCGC1_UART1;
-  putreg32(regval, LM3S_SYSCON_RCGC1);
-
-  //lm3s_configgpio(GPIO_UART1_RX);
-  //lm3s_configgpio(GPIO_UART1_TX);
 #endif
+
+#ifndef CONFIG_UART2_DISABLE
+  regval |= SYSCON_RCGC1_UART2;
+#endif
+
+/* NOTE: put LM3S_SYSCON_RCGC1 twice to workaround LM3S bug */
+putreg32(regval, LM3S_SYSCON_RCGC1);
+putreg32(regval, LM3S_SYSCON_RCGC1);
 
   /* Enable the selected console device */
 

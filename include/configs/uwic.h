@@ -158,6 +158,12 @@
 #define CONFIG_UART0_2STOP 0
 
 /*
+ * Disable UARTs unused in boot process
+ */
+#define CONFIG_UART1_DISABLE
+#define CONFIG_UART2_DISABLE
+
+/*
  * Default load address for programs
  */
 #define CONFIG_SYS_LOAD_ADDR		0xA0100000
@@ -265,16 +271,24 @@
 /*
  * Misc
  */
-#define CONFIG_DISPLAY_CPUINFO
+//#define CONFIG_DISPLAY_CPUINFO
 #define CONFIG_UART0_SERIAL_CONSOLE
 
 //#define DEBUG
 
+#define CONFIG_RAM_BOOT
+//#define CONFIG_FLASH_BOOT
+
 /*
  * Boot options
  */
-/*#define CONFIG_BOOTARGS "earlyprintk ignore_loglevel root=/dev/nfs nfsroot=192.168.100.2:/nfsroot ip=192.168.100.10::192.168.100.1:255.255.255.0"*/
-#define CONFIG_BOOTARGS "ubi.mtd=0 root=ubi0:rootfs rootfstype=ubifs"
-#define CONFIG_BOOTCOMMAND "sf probe 0;ubi part serial0,0;ubifsmount rootfs;ubifsload 0x60400000 /boot/linux.bin;bootm 0x60400000"
+//#define CONFIG_BOOTARGS "earlyprintk ignore_loglevel root=/dev/nfs nfsroot=192.168.100.2:/nfsroot ip=192.168.100.10::192.168.100.1:255.255.255.0"
+//#define CONFIG_BOOTARGS "ubi.mtd=0 root=ubi0:rootfs rootfstype=ubifs"
+
+#if defined(CONFIG_FLASH_BOOT)
+#  define CONFIG_BOOTCOMMAND "sf probe 0;ubi part serial0,0;ubifsmount rootfs;ubifsload 0x60400000 /boot/linux.bin;bootm 0x60400000"
+#elif defined(CONFIG_RAM_BOOT)
+#  define CONFIG_BOOTCOMMAND "bootm 0x60400000"
+#endif
 
 #endif /* __EA1788_H */
