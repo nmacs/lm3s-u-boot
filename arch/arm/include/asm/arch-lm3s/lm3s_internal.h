@@ -371,7 +371,7 @@
 #  define GPIO_ETHPHY_LED0 (GPIO_FUNC_PFOUTPUT  | GPIO_PORTF | 3)       /* PF3: LED0 */
 #  define GPIO_PWM0_1     (GPIO_FUNC_PFOUTPUT  | GPIO_PORTG | 1)       /* PG1:PWM Generator 0, PWM1 */
 #elif defined(CONFIG_ARCH_CHIP_LM3S1D21)
-#  define GPIO_UART0_RX    (GPIO_FUNC_PFINPUT   | GPIO_PORTA | GPIO_DF(1) | 0)       /* PA0: UART 0 receive (U0Rx) */
+#  define GPIO_UART0_RX    (GPIO_FUNC_PFINPUT   | GPIO_PORTA | GPIO_DF(1) | 0 | GPIO_PADTYPE_STDWPU)       /* PA0: UART 0 receive (U0Rx) */
 #  define GPIO_UART0_TX    (GPIO_FUNC_PFOUTPUT  | GPIO_PORTA | GPIO_DF(1) | 1)       /* PA1: UART 0 transmit (U0Tx) */
 
 #  define GPIO_SSI0_CLK    (GPIO_FUNC_PFIO      | GPIO_PORTA | GPIO_DF(1) | 2)       /* PA2: SSI0 clock (SSI0Clk) */
