@@ -2,8 +2,9 @@
 #define __UWIC_H
 
 #define CONFIG_LM3S
-#define CONFIG_ARCH_CHIP_LM3S1D21
+#define CONFIG_ARCH_LM3S1D21
 #include <asm/arch-lm3s/chip.h>
+#include "uwic_pins.h"
 
 /* RCC settings */
 
@@ -283,7 +284,7 @@
  * Boot options
  */
 //#define CONFIG_BOOTARGS "earlyprintk ignore_loglevel root=/dev/nfs nfsroot=192.168.100.2:/nfsroot ip=192.168.100.10::192.168.100.1:255.255.255.0"
-#define CONFIG_BOOTARGS "ubi.mtd=0 root=ubi0:rootfs rootfstype=ubifs"
+#define CONFIG_BOOTARGS "ubi.mtd=1 root=ubi0:rootfs rootfstype=ubifs"
 
 #if defined(CONFIG_FLASH_BOOT)
 #  define CONFIG_BOOTCOMMAND "sf probe 0;ubi part serial0,0;ubifsmount rootfs;ubifsload 0x60400000 /boot/linux.bin;bootm 0x60400000"
