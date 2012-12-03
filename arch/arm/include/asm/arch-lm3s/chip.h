@@ -42,7 +42,7 @@
 
 /* Get customizations for each supported chip (only the LM3S6918 and 65 right now) */
 
-#if defined(CONFIG_ARCH_CHIP_LM3S6918)
+#if defined(CONFIG_ARCH_LM3S6918)
 #  define LM3S_NTIMERS         4  /* Four general purpose timers */
 #  define LM3S_NETHCONTROLLERS 1  /* One Ethernet controller */
 #  undef  LM3S_ETHTS              /* No timestamp register */
@@ -53,7 +53,7 @@
 #  define LM2S_NPWM            0  /* No PWM generator modules */
 #  define LM3S_NQEI            0  /* No quadrature encoders */
 #  define LM3S_NPORTS          8  /* 8 Ports (GPIOA-H) 5-38 GPIOs */
-#elif defined(CONFIG_ARCH_CHIP_LM3S6432)
+#elif defined(CONFIG_ARCH_LM3S6432)
 #  define LM3S_NTIMERS         3  /* Three general purpose timers */
 #  define LM3S_NETHCONTROLLERS 1  /* One Ethernet controller */
 #  undef  LM3S_ETHTS              /* No timestamp register */
@@ -64,7 +64,7 @@
 #  define LM2S_NPWM            1  /* One PWM generator module */
 #  define LM3S_NQEI            0  /* No quadrature encoders */
 #  define LM3S_NPORTS          7  /* 7 Ports (GPIOA-G), 0-42 GPIOs */
-#elif defined(CONFIG_ARCH_CHIP_LM3S6965)
+#elif defined(CONFIG_ARCH_LM3S6965)
 #  define LM3S_NTIMERS         4  /* Four general purpose timers */
 #  define LM3S_NETHCONTROLLERS 1  /* One Ethernet controller */
 #  undef  LM3S_ETHTS              /* No timestamp register */
@@ -75,7 +75,7 @@
 #  define LM2S_NPWM            3  /* Three PWM generator modules */
 #  define LM3S_NQEI            2  /* Two quadrature encoders */
 #  define LM3S_NPORTS          7  /* 7 Ports (GPIOA-G), 0-42 GPIOs */
-#elif defined(CONFIG_ARCH_CHIP_LM3S9B96)
+#elif defined(CONFIG_ARCH_LM3S9B96)
 #  define LM3S_NTIMERS         4  /* Four general purpose timers */
 #  define LM3S_NETHCONTROLLERS 1  /* One Ethernet controller */
 #  undef  LM3S_ETHTS              /* No timestamp register */
@@ -87,7 +87,7 @@
 #  define LM3S_NPWM            4  /* Four PWM generator modules */
 #  define LM3S_NQEI            2  /* Two quadrature encoders */
 #  define LM3S_NPORTS          9  /* 9 Ports (GPIOA-H,J) 0-65 GPIOs */
-#elif defined(CONFIG_ARCH_CHIP_LM3S8962)
+#elif defined(CONFIG_ARCH_LM3S8962)
 #  define LM3S_NTIMERS         4  /* Four general purpose timers */
 #  define LM3S_NETHCONTROLLERS 1  /* One Ethernet controller */
 #  define LM3S_NSSI            1  /* One SSI module */
@@ -98,7 +98,7 @@
 #  define LM3S_NQEI            2  /* Two quadrature encoders */
 #  define LM3S_NPORTS          7  /* 7 Ports (GPIOA-G), 5-42 GPIOs */
 #  define LC3S_CANCONTROLLER   1  /* One CAN controller */
-#elif defined(CONFIG_ARCH_CHIP_LM3S1D21)
+#elif defined(CONFIG_ARCH_LM3S1D21)
 #  define LM3S_NTIMERS         4  /* Four general purpose timers */
 #  define LM3S_NETHCONTROLLERS 0  /* No Ethernet controller */
 #  undef  LM3S_ETHTS              /* No timestamp register */

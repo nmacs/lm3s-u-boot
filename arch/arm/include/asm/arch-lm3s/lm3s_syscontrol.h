@@ -387,6 +387,7 @@
 #define SYSCON_RCGC2_GPIOF            (1 << 5)  /* Bit 5: Port F Clock Gating Control */
 #define SYSCON_RCGC2_GPIOG            (1 << 6)  /* Bit 6: Port G Clock Gating Control */
 #define SYSCON_RCGC2_GPIOH            (1 << 7)  /* Bit 7: Port H Clock Gating Control */
+#define SYSCON_RCGC2_UDMA             (1 << 13) /* Bit 13: uDMA Clock Gating Control */
 #define SYSCON_RCGC2_EMAC0            (1 << 28) /* Bit 28: MAC0 Clock Gating Control */
 #define SYSCON_RCGC2_EPHY0            (1 << 30) /* Bit 30: PHY0 Clock Gating Control */
 
@@ -468,8 +469,13 @@
 
 #define SYSCON_DSLPCLKCFG_DSDIVORIDE_SHIFT 23 /* Bits 28-23: Divider Field Override */
 #define SYSCON_DSLPCLKCFG_DSDIVORIDE_MASK  (0x3f << SYSCON_DSLPCLKCFG_DSDIVORIDE_SHIFT)
+#  define SYSCON_DSLPCLKCFG_DSDIVORIDE(n)  ((n) << SYSCON_DSLPCLKCFG_DSDIVORIDE_SHIFT)
 #define SYSCON_DSLPCLKCFG_DSOSCSRC_SHIFT   4 /* Bits 6-4: Clock Source */
 #define SYSCON_DSLPCLKCFG_DSOSCSRC_MASK    (0x07 << SYSCON_DSLPCLKCFG_DSOSCSRC_SHIFT)
+#  define SYSCON_DSLPCLKCFG_DSOSCSRC_MOSC  (0 << SYSCON_DSLPCLKCFG_DSOSCSRC_SHIFT)
+#  define SYSCON_DSLPCLKCFG_DSOSCSRC_PIOSC (1 << SYSCON_DSLPCLKCFG_DSOSCSRC_SHIFT)
+#  define SYSCON_DSLPCLKCFG_DSOSCSRC_30KHZ (3 << SYSCON_DSLPCLKCFG_DSOSCSRC_SHIFT)
+#  define SYSCON_DSLPCLKCFG_DSOSCSRC_32KHZ (7 << SYSCON_DSLPCLKCFG_DSOSCSRC_SHIFT)
 
 /************************************************************************************
  * Public Types

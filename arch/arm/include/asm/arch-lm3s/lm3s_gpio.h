@@ -387,8 +387,46 @@
  * Public Data
  ************************************************************************************/
 
+#ifndef __ASSEMBLY__
+
+#include <linux/types.h>
+
 /************************************************************************************
  * Public Function Prototypes
  ************************************************************************************/
+
+/****************************************************************************
+ * Name: lm3s_configgpio
+ *
+ * Description:
+ *   Configure a GPIO pin based on bit-encoded description of the pin.
+ *
+ ****************************************************************************/
+
+int lm3s_configgpio(uint32_t cfgset);
+
+/****************************************************************************
+ * Name: lm3s_gpiowrite
+ *
+ * Description:
+ *   Write one or zero to the selected GPIO pin
+ *
+ ****************************************************************************/
+
+void lm3s_gpiowrite(uint32_t pinset, int value);
+
+/****************************************************************************
+ * Name: lm3s_gpioread
+ *
+ * Description:
+ *   Read one or zero from the selected GPIO pin
+ *
+ ****************************************************************************/
+
+int lm3s_gpioread(uint32_t pinset, int value);
+
+void lm3s_gpioirqenable(uint32_t pinset);
+
+#endif
 
 #endif /* __ARCH_ARM_SRC_LM3S_LM3S_GPIO_H */

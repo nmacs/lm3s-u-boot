@@ -42,8 +42,8 @@
 
 /* Memory map ***********************************************************************/
 
-#if defined(CONFIG_ARCH_CHIP_LM3S6918) || defined(CONFIG_ARCH_CHIP_LM3S6432) || \
-    defined(CONFIG_ARCH_CHIP_LM3S6965) || defined(CONFIG_ARCH_CHIP_LM3S8962)
+#if defined(CONFIG_ARCH_LM3S6918) || defined(CONFIG_ARCH_LM3S6432) || \
+    defined(CONFIG_ARCH_LM3S6965) || defined(CONFIG_ARCH_LM3S8962)
 #  define LM3S_FLASH_BASE     0x00000000 /* -0x0003ffff: On-chip FLASH */
                                          /* -0x1fffffff: Reserved */
 #  define LM3S_SRAM_BASE      0x20000000 /* -0x2000ffff: Bit-banded on-chip SRAM */
@@ -62,7 +62,7 @@
                                          /* -0xe003ffff: Reserved */
 #  define LM3S_TPIU_BASE      0xe0040000 /* -0xe0040fff: Trace Port Interface Unit */
                                          /* -0xffffffff: Reserved */
-#elif defined(CONFIG_ARCH_CHIP_LM3S1D21)
+#elif defined(CONFIG_ARCH_LM3S1D21)
 #  define LM3S_FLASH_BASE     0x00000000 /* -0x0003ffff: On-chip FLASH */
                                          /* -0x1fffffff: Reserved */
 #  define LM3S_SRAM_BASE      0x20000000 /* -0x2000ffff: Bit-banded on-chip SRAM */
@@ -78,12 +78,12 @@
 #  define LM3S_DWT_BASE       0xe0001000 /* -0xe0001fff: Data Watchpoint and Trace */
 #  define LM3S_FPB_BASE       0xe0002000 /* -0xe0002fff: Flash Patch and Breakpoint */
                                          /* -0xe000dfff: Reserved */
-#  define LM3S_CORE_PERIPHERAL_BASE 0xe000e000
+#  define LM3S_CM3P_BASE      0xE000E000 /*            : Cortex-M3 Peripherals */
 #  define LM3S_NVIC_BASE      0xe000e000 /* -0xe000efff: Nested Vectored Interrupt Controller */
                                          /* -0xe003ffff: Reserved */
 #  define LM3S_TPIU_BASE      0xe0040000 /* -0xe0040fff: Trace Port Interface Unit */
                                          /* -0xffffffff: Reserved */
-#elif defined(CONFIG_ARCH_CHIP_LM3S9B96)
+#elif defined(CONFIG_ARCH_LM3S9B96)
 #  define LM3S_FLASH_BASE     0x00000000 /* -0x0003ffff: On-chip FLASH */
                                          /* -0x1fffffff: Reserved */
 #  define LM3S_SRAM_BASE      0x20000000 /* -0x2000ffff: Bit-banded on-chip SRAM */
@@ -114,7 +114,7 @@
  * error detection that makes the duplication worthwhile.
  */
 
-#if defined(CONFIG_ARCH_CHIP_LM3S6918)
+#if defined(CONFIG_ARCH_LM3S6918)
 /* FiRM Peripheral Base Addresses */
 
 #  define LM3S_WDOG_BASE      (LM3S_PERIPH_BASE + 0x00000) /* -0x00fff: Watchdog Timer */
@@ -156,7 +156,7 @@
 #  define LM3S_FLASHCON_BASE  (LM3S_PERIPH_BASE + 0xfd000)  /* -0xfdfff: FLASH Control */
 #  define LM3S_SYSCON_BASE    (LM3S_PERIPH_BASE + 0xfe000)  /* -0xfefff: System Control */
                                                             /* -0x1ffffff: Reserved */
-#elif defined(CONFIG_ARCH_CHIP_LM3S6432)
+#elif defined(CONFIG_ARCH_LM3S6432)
 /* FiRM Peripheral Base Addresses */
 
 #  define LM3S_WDOG_BASE      (LM3S_PERIPH_BASE + 0x00000) /* -0x00fff: Watchdog Timer */
@@ -196,7 +196,7 @@
 #  define LM3S_SYSCON_BASE    (LM3S_PERIPH_BASE + 0xfe000)  /* -0xfefff: System Control */
                                                             /* -0x1ffffff: Reserved */
 
-#elif defined(CONFIG_ARCH_CHIP_LM3S6965)
+#elif defined(CONFIG_ARCH_LM3S6965)
 /* FiRM Peripheral Base Addresses */
 
 #  define LM3S_WDOG_BASE      (LM3S_PERIPH_BASE + 0x00000) /* -0x00fff: Watchdog Timer */
@@ -242,7 +242,7 @@
 #  define LM3S_FLASHCON_BASE  (LM3S_PERIPH_BASE + 0xfd000)  /* -0xfdfff: FLASH Control */
 #  define LM3S_SYSCON_BASE    (LM3S_PERIPH_BASE + 0xfe000)  /* -0xfefff: System Control */
                                                             /* -0x1ffffff: Reserved */
-#elif defined(CONFIG_ARCH_CHIP_LM3S8962)
+#elif defined(CONFIG_ARCH_LM3S8962)
 /* FiRM Peripheral Base Addresses */
 
 #  define LM3S_WDOG_BASE      (LM3S_PERIPH_BASE + 0x00000) /* -0x00fff: Watchdog Timer */
@@ -287,7 +287,7 @@
 #  define LM3S_FLASHCON_BASE  (LM3S_PERIPH_BASE + 0xfd000)  /* -0xfdfff: FLASH Control */
 #  define LM3S_SYSCON_BASE    (LM3S_PERIPH_BASE + 0xfe000)  /* -0xfefff: System Control */
                                                             /* -0x1ffffff: Reserved */
-#elif defined(CONFIG_ARCH_CHIP_LM3S9B96)
+#elif defined(CONFIG_ARCH_LM3S9B96)
 /* FiRM Peripheral Base Addresses */
 
 #  define LM3S_WDOG_BASE      (LM3S_PERIPH_BASE + 0x00000) /* -0x00fff: Watchdog Timer */
@@ -356,11 +356,12 @@
 #  define LM3S_SYSCON_BASE    (LM3S_PERIPH_BASE + 0xfe000)  /* -0xfefff: System Control */
 #  define LM3S_UDMA_BASE      (LM3S_PERIPH_BASE + 0xff000)  /* -0xfffff: System Control */
                                                             /* -0x1ffffff: Reserved */
-#elif defined(CONFIG_ARCH_CHIP_LM3S1D21)
+#elif defined(CONFIG_ARCH_LM3S1D21)
 /* FiRM Peripheral Base Addresses */
 
 #  define LM3S_WDOG0_BASE     (LM3S_PERIPH_BASE + 0x00000) /* -0x00fff: Watchdog Timer 0 */
 #  define LM3S_WDOG1_BASE     (LM3S_PERIPH_BASE + 0x01000) /* -0x01fff: Watchdog Timer 1 */
+#  define LM3S_WDOG_BASE(n)   (LM3S_WDOG0_BASE + (n) * 0x1000)
                                                            /* -0x03fff: Reserved */
 #  define LM3S_GPIOA_BASE     (LM3S_PERIPH_BASE + 0x04000) /* -0x04fff: GPIO Port A */
 #  define LM3S_GPIOB_BASE     (LM3S_PERIPH_BASE + 0x05000) /* -0x05fff: GPIO Port B */
