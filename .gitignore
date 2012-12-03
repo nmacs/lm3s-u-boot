@@ -47,6 +47,8 @@
 /include/generated/
 /lib/asm-offsets.s
 
+/rom_disk.cramfs
+
 # stgit generated dirs
 patches-*
 .stgit-edit.txt
