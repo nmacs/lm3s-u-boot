@@ -21,14 +21,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
- 
+
 MEMORY
 {
 	ROM :   ORIGIN = 0,          LENGTH = 512K
 	SRAM :  ORIGIN = 0x20000000, LENGTH = 96K
 	SDRAM : ORIGIN = 0x60000000, LENGTH = 8M
 }
-          
+
 REGION_ALIAS("REGION_TEXT", ROM);
 REGION_ALIAS("REGION_RODATA", ROM);
 REGION_ALIAS("REGION_DATA", SRAM);
@@ -46,48 +46,48 @@ SECTIONS
 		*(.text)
 		__u_boot_code_end = .;
 	} > REGION_TEXT
-	
+
 	. = ALIGN(4);
 	.dynsym :
 	{
 		*(.dynsym)
 	} > REGION_TEXT
-	
+
 	. = ALIGN(4);
 	.rel :
 	{
 		*(.rel*)
 	} > REGION_TEXT
-	
+
 	. = ALIGN(4);
 	.got :
 	{
 		*(.got*)
 	} > REGION_TEXT
-	
+
 	. = ALIGN(4);
 	.hash :
 	{
 		*(.hash)
 	} > REGION_TEXT
-	
+
 	. = ALIGN(4);
-	.u_boot_cmd : 
-	{ 
+	.u_boot_cmd :
+	{
 		__u_boot_cmd_start = .;
-		*(.u_boot_cmd) 
+		*(.u_boot_cmd)
 		__u_boot_cmd_end = .;
 	} > REGION_RODATA
 
 	. = ALIGN(4);
-	.rodata : 
+	.rodata :
 	{
 		*(.rodata*)
-		
+
 		. = ALIGN(4);
 		__u_boot_rodata_end = .;
 	} > REGION_RODATA
-	
+
 	. = ALIGN(4);
 	.data : AT (__u_boot_rodata_end)
 	{
@@ -96,7 +96,7 @@ SECTIONS
 		. = ALIGN(4);
 		__u_boot_data_end = .;
 	} > REGION_DATA
-	
+
 	__u_boot_data_load_start = LOADADDR(.data);
 
 	. = ALIGN(4);
@@ -107,10 +107,11 @@ SECTIONS
 		. = ALIGN(4);
 		__u_boot_bss_end = .;
 	} > REGION_BSS
-	
+
 	/DISCARD/ : { *(.dynstr*) }
 	/DISCARD/ : { *(.dynamic*) }
 	/DISCARD/ : { *(.plt*) }
 	/DISCARD/ : { *(.interp*) }
 	/DISCARD/ : { *(.gnu*) }
+	/DISCARD/ : { *(.ARM*) }
 }
