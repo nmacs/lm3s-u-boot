@@ -23,7 +23,7 @@
  * SHA1-RSA signature check
  */
 
-//#define DEBUG
+#define DEBUG
 
 #include <common.h>
 #include <config.h>
@@ -224,9 +224,9 @@ int do_secure_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 err:
 #ifdef DEBUG
-	printf("Thempering possible! Halt the system.\n");
+	printf("Tampering possible! Halt the system.\n");
 #endif
-	while(1) {} // software thempering DO NOT EXIT!
+	while(1) {} // software tampering DO NOT EXIT!
 	return 0;
 }
 

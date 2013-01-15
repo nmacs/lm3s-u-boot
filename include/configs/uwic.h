@@ -217,6 +217,10 @@
 /*
  * File systems
  */
+#define CONFIG_CMD_CRAMFS
+#define CONFIG_CRAMFS_CMDLINE
+#define CONFIG_CMD_CRAMFS_ADDR 0x50000
+
 //#define CONFIG_CMD_JFFS2
 //#define CONFIG_JFFS2_DEV "serial0"
 #define CONFIG_CMD_SF
@@ -287,9 +291,35 @@
 #define CONFIG_BOOTARGS "ubi.mtd=1 root=ubi0:rootfs rootfstype=ubifs"
 
 #if defined(CONFIG_FLASH_BOOT)
-#  define CONFIG_BOOTCOMMAND "sf probe 0;ubi part serial0,0;ubifsmount rootfs;ubifsload 0x60400000 /boot/linux.bin;bootm 0x60400000"
+#  define CONFIG_BOOTCOMMAND "sf probe 0;ubi part serial0,0;ubifsmount rootfs;secld 0x60400000 ubifs:///boot/linux.bin cramfs:///pub_key;bootm 0x60400080"
 #elif defined(CONFIG_RAM_BOOT)
-#  define CONFIG_BOOTCOMMAND "bootm 0x60400000"
+#  define CONFIG_BOOTCOMMAND "bootm 0x60400080"
 #endif
+
+#define CONFIG_LIBTOMCRYPT
+#define LTC_SOURCE
+#define LTC_NO_STDIO
+#define LTC_NO_WCHAR
+#define LTC_NO_SIGNAL
+#define LTC_NO_FILE
+#define LTM_DESC
+
+#define LTC_NO_CIPHERS
+#define LTC_NO_MODES
+#define LTC_NO_HASHES
+#define LTC_SHA1
+#define LTC_NO_MACS
+#define LTC_NO_PRNGS
+#define LTC_NO_PK
+#define LTC_MRSA
+#define LTC_DER
+#define LTC_NO_CURVES
+#define LTC_NO_TEST
+#define LTC_NO_PKCS
+
+#define CONFIG_LIBTOMMATH
+#define LTM_NO_STDIO
+
+#define CONFIG_CMD_SECLD
 
 #endif /* __EA1788_H */
