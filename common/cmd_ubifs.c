@@ -45,7 +45,7 @@ int ubifs_init(void);
 int ubifs_mount(char *vol_name);
 void ubifs_umount(struct ubifs_info *c);
 int ubifs_ls(char *dir_name);
-int ubifs_load(char *filename, u32 addr, u32 size);
+int ubifs_load(char *filename, u32 addr, u32 *size);
 
 int do_ubifs_mount(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
@@ -156,9 +156,17 @@ int do_ubifs_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 	debug("Loading file '%s' to address 0x%08x (size %d)\n", filename, addr, size);
 
-	ret = ubifs_load(filename, addr, size);
+	ret = ubifs_load(filename, addr, &size);
 	if (ret)
 		printf("%s not found!\n", filename);
+	else
+	{
+		char buf[12];
+		printf("### UBIFS load complete: %d bytes loaded to 0x%lx\n",
+			size, addr);
+		sprintf(buf, "%x", size);
+		setenv("filesize", buf);
+	}
 
 	return ret;
 }

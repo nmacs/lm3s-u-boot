@@ -678,7 +678,7 @@ error:
 	return err;
 }
 
-int ubifs_load(char *filename, u32 addr, u32 size)
+int ubifs_load(char *filename, u32 addr, u32 *sz)
 {
 	struct ubifs_info *c = ubifs_sb->s_fs_info;
 	unsigned long inum;
@@ -688,6 +688,7 @@ int ubifs_load(char *filename, u32 addr, u32 size)
 	int i;
 	int count;
 	int last_block_size = 0;
+	int size;
 
 	c->ubi = ubi_open_volume(c->vi.ubi_num, c->vi.vol_id, UBI_READONLY);
 	/* ubifs_findfile will resolve symlinks, so we know that we get
@@ -712,8 +713,15 @@ int ubifs_load(char *filename, u32 addr, u32 size)
 	 * If no size was specified or if size bigger than filesize
 	 * set size to filesize
 	 */
-	if ((size == 0) || (size > inode->i_size))
+	if (sz == 0 )
 		size = inode->i_size;
+	if ((*sz == 0) || (*sz > inode->i_size))
+	{
+		size = inode->i_size;
+		*sz = size;
+	}
+	else
+		size = *sz;
 
 	count = (size + UBIFS_BLOCK_SIZE - 1) >> UBIFS_BLOCK_SHIFT;
 	printf("Loading file '%s' to addr 0x%08x with size %d (0x%08x)...\n",
