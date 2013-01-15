@@ -115,7 +115,11 @@ int do_cramfs_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	struct mtdids id;
 
 	ulong addr;
+#ifdef CONFIG_CMD_CRAMFS_ADDR
+	addr = CONFIG_CMD_CRAMFS_ADDR;
+#else
 	addr = simple_strtoul(getenv("cramfsaddr"), NULL, 16);
+#endif
 
 	/* hack! */
 	/* cramfs_* only supports NOR flash chips */
@@ -178,7 +182,11 @@ int do_cramfs_ls(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	struct mtdids id;
 
 	ulong addr;
+#ifdef CONFIG_CMD_CRAMFS_ADDR
+	addr = CONFIG_CMD_CRAMFS_ADDR;
+#else
 	addr = simple_strtoul(getenv("cramfsaddr"), NULL, 16);
+#endif
 
 	/* hack! */
 	/* cramfs_* only supports NOR flash chips */
