@@ -44,11 +44,12 @@ inline void print_hex(char *src, int src_size)
 }
 #endif
 
+hash_state hash;
+rsa_key pub_key;
+char hash_result[HASH_SIZE];
+
 static int check_signature(void* buf, int size, void *key, int key_size)
 {
-	hash_state hash;
-	char hash_result[HASH_SIZE];
-	rsa_key pub_key;
 	void *signature;
 	void *data;
 	int data_size;
@@ -83,6 +84,7 @@ static int check_signature(void* buf, int size, void *key, int key_size)
 	sha1_process(&hash, data, data_size);
 	sha1_done(&hash, hash_result);
 
+#if 0
 #ifdef DEBUG
 	printf("Data (first 40 bytes of %i bytes):\n", data_size);
 	print_hex(data, HASH_SIZE);
@@ -92,6 +94,7 @@ static int check_signature(void* buf, int size, void *key, int key_size)
 
 	printf("Signature:\n");
 	print_hex(signature, SIG_SIZE);
+#endif
 #endif
 
 	ret = rsa_verify_hash_ex(signature, SIG_SIZE, hash_result, HASH_SIZE,
@@ -115,6 +118,7 @@ static int check_signature(void* buf, int size, void *key, int key_size)
 		goto err;
 
 	return 0;
+
 
 err:
 	memset(buf, 0, size);

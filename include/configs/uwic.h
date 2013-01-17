@@ -291,6 +291,7 @@
 #define CONFIG_BOOTARGS "ubi.mtd=1 root=ubi0:rootfs rootfstype=ubifs"
 
 #if defined(CONFIG_FLASH_BOOT)
+//#  define CONFIG_BOOTCOMMAND "sf probe 0;ubi part serial0,0;ubifsmount rootfs;ubifsload 0x60400000 /boot/linux.bin;bootm 0x60400000"
 #  define CONFIG_BOOTCOMMAND "sf probe 0;ubi part serial0,0;ubifsmount rootfs;secld 0x60400000 ubifs:///boot/linux.bin cramfs:///pub_key;bootm 0x60400080"
 #elif defined(CONFIG_RAM_BOOT)
 #  define CONFIG_BOOTCOMMAND "bootm 0x60400080"
