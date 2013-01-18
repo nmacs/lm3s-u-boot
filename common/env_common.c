@@ -186,7 +186,9 @@ void set_default_env(const char *s)
 			puts(s);
 		}
 	} else {
+#if defined(DEBUG)
 		puts("Using default environment\n\n");
+#endif
 	}
 
 	if (himport_r(&env_htab, (char *)default_environment,

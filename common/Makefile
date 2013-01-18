@@ -64,6 +64,7 @@ COBJS-$(CONFIG_ENV_IS_IN_SPI_FLASH) += env_sf.o
 COBJS-$(CONFIG_ENV_IS_NOWHERE) += env_nowhere.o
 
 # command
+COBJS-$(CONFIG_CMD_SECLD) += cmd_secld.o
 COBJS-$(CONFIG_CMD_AMBAPP) += cmd_ambapp.o
 COBJS-$(CONFIG_SOURCE) += cmd_source.o
 COBJS-$(CONFIG_CMD_SOURCE) += cmd_source.o
@@ -173,8 +174,6 @@ COBJS-$(CONFIG_LYNXKDI) += lynxkdi.o
 COBJS-$(CONFIG_MODEM_SUPPORT) += modem.o
 COBJS-$(CONFIG_UPDATE_TFTP) += update.o
 COBJS-$(CONFIG_USB_KEYBOARD) += usb_kbd.o
-
-COBJS-$(CONFIG_CMD_SECLD) += cmd_secld.o
 
 COBJS	:= $(sort $(COBJS-y))
 XCOBJS	:= $(sort $(XCOBJS-y))

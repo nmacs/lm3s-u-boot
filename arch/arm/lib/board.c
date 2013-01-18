@@ -259,7 +259,9 @@ init_fnc_t *init_sequence[] = {
 	init_baudrate,		/* initialze baudrate settings */
 	serial_init,		/* serial communications setup */
 	console_init_f,		/* stage 1 init of console */
+#if defined(CONFIG_DISPLAY_BUNNER)
 	display_banner,		/* say that we are here */
+#endif
 #if defined(CONFIG_DISPLAY_CPUINFO)
 	print_cpuinfo,		/* display cpu info (and speed) */
 #endif
@@ -420,7 +422,9 @@ void board_init_f (ulong bootflag)
 	gd->bd->bi_baudrate = gd->baudrate;
 	/* Ram ist board specific, so move it to board code ... */
 	dram_init_banksize();
+#if defined(CONFIG_DISPLAY_DRAM_CONFIG)
 	display_dram_config();	/* and display it */
+#endif
 
 	gd->relocaddr = addr;
 	gd->start_addr_sp = addr_sp;
@@ -483,7 +487,9 @@ void board_init_r (gd_t *id, ulong dest_addr)
 	mem_malloc_init (malloc_start, TOTAL_MALLOC_LEN);
 
 #if !defined(CONFIG_SYS_NO_FLASH)
+# if defined(CONFIG_DISPLAY_FLASH)
 	puts ("Flash: ");
+# endif
 
 	if ((flash_size = flash_init ()) > 0) {
 # ifdef CONFIG_SYS_FLASH_CHECKSUM
@@ -501,7 +507,9 @@ void board_init_r (gd_t *id, ulong dest_addr)
 		}
 		putc ('\n');
 # else	/* !CONFIG_SYS_FLASH_CHECKSUM */
+#  if defined(CONFIG_DISPLAY_FLASH)
 		print_size (flash_size, "\n");
+#  endif
 # endif /* CONFIG_SYS_FLASH_CHECKSUM */
 	} else {
 		puts (failed);

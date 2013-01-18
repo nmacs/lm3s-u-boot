@@ -276,10 +276,17 @@
 /*
  * Misc
  */
-//#define CONFIG_DISPLAY_CPUINFO
 #define CONFIG_UART0_SERIAL_CONSOLE
 
 //#define DEBUG
+
+#ifdef DEBUG
+# define CONFIG_DISPLAY_FLASH
+# define CONFIG_DISPLAY_BUNNER
+# define CONFIG_DISPLAY_CPUINFO
+#else
+# define CONFIG_SYS_CONSOLE_INFO_QUIET
+#endif
 
 //#define CONFIG_RAM_BOOT
 #define CONFIG_FLASH_BOOT
