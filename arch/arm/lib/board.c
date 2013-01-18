@@ -95,6 +95,8 @@ extern size_t* _u_boot_code_end;
 extern size_t* _u_boot_bss_start;
 extern size_t* _u_boot_bss_end;
 
+extern int watchdog_init(void);
+
 /************************************************************************
  * Coloured LED functionality
  ************************************************************************
@@ -300,6 +302,10 @@ void board_init_f (ulong bootflag)
 			hang ();
 		}
 	}
+
+#ifdef CONFIG_WATCHDOG
+	watchdog_init();
+#endif
 
 	debug ("monitor len: %08lX\n", gd->mon_len);
 	/*

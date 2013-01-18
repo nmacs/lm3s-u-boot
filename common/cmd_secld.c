@@ -56,6 +56,10 @@ static __attribute__ ((noinline)) int check_signature(void* buf, int size, void 
 	rsa_key pub_key;
 	hash_state hash;
 
+#ifdef CONFIG_WATCHDOG
+	watchdog_reset();
+#endif
+
 #ifdef DEBUG
 	printf("Checking signature [size = %i, key_size = %i]\n", size, key_size);
 #endif
@@ -114,9 +118,16 @@ static __attribute__ ((noinline)) int check_signature(void* buf, int size, void 
 	if( !result )
 		goto err;
 
+#ifdef CONFIG_WATCHDOG
+	watchdog_reset();
+#endif
+
 	return 0;
 
 err:
+#ifdef CONFIG_WATCHDOG
+	watchdog_reset();
+#endif
 	memset(buf, 0, size);
 	return -1;
 }
@@ -155,6 +166,9 @@ static int fs_load_file(char *cmd, int addr, const char *name)
 
 static int load_file(int addr, const char* name)
 {
+#ifdef CONFIG_WATCHDOG
+	watchdog_reset();
+#endif
 	if( strncmp(name, "ubifs://", 8) == 0 )
 		return fs_load_file("ubifsload", addr, name + 8);
 	else if( strncmp(name, "cramfs://", 9) == 0 )

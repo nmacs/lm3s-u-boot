@@ -292,6 +292,11 @@
 #define CONFIG_FLASH_BOOT
 
 /*
+ * Watchdog
+ */
+#define CONFIG_WATCHDOG
+
+/*
  * Boot options
  */
 //#define CONFIG_BOOTARGS "earlyprintk ignore_loglevel root=/dev/nfs nfsroot=192.168.100.2:/nfsroot ip=192.168.100.10::192.168.100.1:255.255.255.0"

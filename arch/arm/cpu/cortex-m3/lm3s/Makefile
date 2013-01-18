@@ -26,6 +26,10 @@ include $(TOPDIR)/config.mk
 LIB	= $(obj)lib$(SOC).o
 
 COBJS	= common.o serial.o flash.o timer.o syscontrol.o gpio.o
+ifdef CONFIG_WATCHDOG
+COBJS  += watchdog.o
+endif
+
 SOBJS	=
 
 SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)

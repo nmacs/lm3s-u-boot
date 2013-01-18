@@ -932,6 +932,10 @@ int spi_xfer(struct spi_slave *slave, unsigned int bitlen, const void *dout,
   struct lm3s_spi_slave *lss = to_lm3s_spi_slave(slave);
   uint bytes = bitlen / 8;
 
+#ifdef CONFIG_WATCHDOG
+	watchdog_reset();
+#endif
+
   ssivdbg("%s: bus:%i cs:%i bitlen:%i bytes:%i flags:%lx\n", __func__,
         slave->bus, slave->cs, bitlen, bytes, flags);
 
