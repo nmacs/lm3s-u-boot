@@ -7,6 +7,7 @@
 #include <asm/io.h>
 #include <asm/arch/hardware.h>
 #include <asm/arch/lm3s_internal.h>
+#include <watchdog.h>
 
 /**************************************************************************
  * Pre-processor Definitions
@@ -227,14 +228,23 @@ putreg32(regval, LM3S_SYSCON_RCGC1);
 
 int serial_getc(void)
 {
+	WATCHDOG_RESET();
+
 	/* Wait for a character from the UART */
-	while ((getreg32(LM3S_CONSOLE_BASE + LM3S_UART_FR_OFFSET) & UART_FR_RXFE));
+	while ((getreg32(LM3S_CONSOLE_BASE + LM3S_UART_FR_OFFSET) & UART_FR_RXFE))
+	{
+#if defined(DEBUG)
+		WATCHDOG_RESET();
+#endif
+	}
 
 	return (int)(getreg32(LM3S_CONSOLE_BASE + LM3S_UART_DR_OFFSET) & UART_DR_DATA_MASK);
 }
 
 void serial_putc(const char ch)
 {
+	WATCHDOG_RESET();
+
   /* Wait until the TX FIFO is not full */
   while ((getreg32(LM3S_CONSOLE_BASE + LM3S_UART_FR_OFFSET) & UART_FR_TXFF) != 0);
 
