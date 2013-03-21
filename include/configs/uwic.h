@@ -167,7 +167,7 @@
 /*
  * Default load address for programs
  */
-#define CONFIG_SYS_LOAD_ADDR		0xA0100000
+#define CONFIG_SYS_LOAD_ADDR		0x60400000
 
 /*
  * Default boot delay is 3 seconds
@@ -221,12 +221,8 @@
 #define CONFIG_CRAMFS_CMDLINE
 #define CONFIG_CMD_CRAMFS_ADDR 0x50000
 
-//#define CONFIG_CMD_JFFS2
-//#define CONFIG_JFFS2_DEV "serial0"
 #define CONFIG_CMD_SF
 #define CONFIG_SF_DEFAULT_SPEED 5000000
-//#define CONFIG_JFFS2_SERIAL
-//#define DEFAULT_EMPTY_SCAN_SIZE 256
 
 #define CONFIG_MTD_DEVICE
 #define CONFIG_CMD_MTDPARTS
@@ -243,6 +239,8 @@
 #define CONFIG_CMD_ENV
 #define CONFIG_CMD_ECHO   /* echo arguments   */
 #define CONFIG_CMD_RUN    /* run command in env variable  */
+#define CONFIG_CMD_LOADB
+#define CONFIG_CMD_SECLD
 
 #undef CONFIG_CMD_NAND
 #undef CONFIG_CMD_BDI    /* bdinfo     */
@@ -254,7 +252,6 @@
 #undef CONFIG_CMD_ITEST  /* Integer (and string) test  */
 #undef CONFIG_CMD_FLASH  /* flinfo, erase, protect */
 #undef CONFIG_CMD_IMLS   /* List all found images  */
-#undef CONFIG_CMD_LOADB  /* loadb      */
 #undef CONFIG_CMD_LOADS  /* loads      */
 #undef CONFIG_CMD_MEMORY /* md mm nm mw cp cmp crc base loop mtest */
 #undef CONFIG_CMD_MISC   /* Misc functions like sleep etc*/
@@ -279,6 +276,7 @@
 #define CONFIG_UART0_SERIAL_CONSOLE
 
 //#define DEBUG
+//#define CONFIG_UBIFS_FS_DEBUG
 
 #ifdef DEBUG
 # define CONFIG_DISPLAY_FLASH
@@ -288,9 +286,6 @@
 # define CONFIG_SYS_CONSOLE_INFO_QUIET
 #endif
 
-//#define CONFIG_RAM_BOOT
-#define CONFIG_FLASH_BOOT
-
 /*
  * Watchdog
  */
@@ -299,16 +294,26 @@
 /*
  * Boot options
  */
-//#define CONFIG_BOOTARGS "earlyprintk ignore_loglevel root=/dev/nfs nfsroot=192.168.100.2:/nfsroot ip=192.168.100.10::192.168.100.1:255.255.255.0"
-#define CONFIG_BOOTARGS "ubi.mtd=1 root=ubi0:rootfs rootfstype=ubifs"
+#define CONFIG_BOOTARGS       "ubi.mtd=1 root=ubi0:rootfs rootfstype=ubifs"
 
-#if defined(CONFIG_FLASH_BOOT)
-//#  define CONFIG_BOOTCOMMAND "sf probe 0;ubi part serial0,0;ubifsmount rootfs;ubifsload 0x60400000 /boot/linux.bin;bootm 0x60400000"
-#  define CONFIG_BOOTCOMMAND "sf probe 0;ubi part serial0,0;ubifsmount rootfs;secld 0x60400000 ubifs:///boot/linux.bin cramfs:///pub_key;bootm 0x60400080"
-#elif defined(CONFIG_RAM_BOOT)
-#  define CONFIG_BOOTCOMMAND "bootm 0x60400080"
-#endif
+#define CONFIG_BOOTCOMMAND    "sf probe 0;ubi part serial0,0;ubifsmount rootfs;" \
+                              "secld 0x60400000 ubifs:///boot/linux.bin cramfs:///pub_key;" \
+                              "bootm 0x60400080"
 
+#define CONFIG_NFSBOOTCOMMAND "set bootargs root=/dev/nfs nfsroot=${serverip}:${rootpath} ip=${ipaddr}::${gatewayip}:${netmask};" \
+                              "loadb 0x60400000;" \
+                              "bootm 0x60400080"
+
+#define CONFIG_IPADDR         10.65.100.205
+#define CONFIG_GATEWAYIP      10.65.100.1
+#define CONFIG_NETMASK        255.255.255.0
+
+#define CONFIG_SERVERIP       10.65.100.176
+#define CONFIG_ROOTPATH       /nfsroot
+
+/*
+ * LibTomCrypt & LibTomMath
+ */
 #define CONFIG_LIBTOMCRYPT
 #define LTC_SOURCE
 #define LTC_NO_STDIO
@@ -332,7 +337,5 @@
 
 #define CONFIG_LIBTOMMATH
 #define LTM_NO_STDIO
-
-#define CONFIG_CMD_SECLD
 
 #endif /* __EA1788_H */
