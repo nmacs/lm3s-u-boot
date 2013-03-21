@@ -60,7 +60,7 @@ struct spi_slave {
  *
  * TODO: I don't think we really need this.
  */
-void spi_init(void);
+int spi_init(void);
 
 /*-----------------------------------------------------------------------
  * Set up communications parameters for a SPI slave.

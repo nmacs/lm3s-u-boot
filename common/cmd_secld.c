@@ -29,17 +29,18 @@
 #include <config.h>
 #include <command.h>
 #include <tomcrypt.h>
+#include <watchdog.h>
 
 #define SIG_SIZE 128
 #define HASH_SIZE 20
 #define MAX_PK_SIZE 512
 
 #ifdef DEBUG
-inline void print_hex(char *src, int src_size)
+inline void print_hex(unsigned char *src, int src_size)
 {
 	int x;
 	for (x = 0; x < src_size; x++)
-		printf("%.2x", (unsigned char)src[x] );
+		printf("%.2x", src[x]);
 	printf("\n");
 }
 #endif
@@ -52,13 +53,11 @@ static __attribute__ ((noinline)) int check_signature(void* buf, int size, void 
 	int ret;
 	int sha1_index;
 	int result = 0;
-	char hash_result[HASH_SIZE];
+	unsigned char hash_result[HASH_SIZE];
 	rsa_key pub_key;
 	hash_state hash;
 
-#ifdef CONFIG_WATCHDOG
-	watchdog_reset();
-#endif
+	WATCHDOG_RESET();
 
 #ifdef DEBUG
 	printf("Checking signature [size = %i, key_size = %i]\n", size, key_size);
@@ -118,16 +117,12 @@ static __attribute__ ((noinline)) int check_signature(void* buf, int size, void 
 	if( !result )
 		goto err;
 
-#ifdef CONFIG_WATCHDOG
-	watchdog_reset();
-#endif
+	WATCHDOG_RESET();
 
 	return 0;
 
 err:
-#ifdef CONFIG_WATCHDOG
-	watchdog_reset();
-#endif
+	WATCHDOG_RESET();
 	memset(buf, 0, size);
 	return -1;
 }
@@ -135,7 +130,7 @@ err:
 static int fs_load_file(char *cmd, int addr, const char *name)
 {
 	cmd_tbl_t *cmdtp;
-	char *argv[4];
+	const char* argv[4];
 	char saddr[16];
 	int ret;
 
@@ -166,9 +161,8 @@ static int fs_load_file(char *cmd, int addr, const char *name)
 
 static int load_file(int addr, const char* name)
 {
-#ifdef CONFIG_WATCHDOG
-	watchdog_reset();
-#endif
+	WATCHDOG_RESET();
+
 	if( strncmp(name, "ubifs://", 8) == 0 )
 		return fs_load_file("ubifsload", addr, name + 8);
 	else if( strncmp(name, "cramfs://", 9) == 0 )

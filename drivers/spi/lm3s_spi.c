@@ -46,6 +46,7 @@
 #include <stdint.h>
 #include <asm/arch/lm3s_internal.h>
 #include <asm/arch/hardware.h>
+#include <watchdog.h>
 
 struct lm3s_spi_slave {
   struct spi_slave slave;
@@ -826,7 +827,7 @@ void spi_cs_deactivate(struct spi_slave *slave)
   ssivdbg("%s: SPI_CS_GPIO:%x\n", __func__, slave->cs);
 }
 
-void spi_init()
+int spi_init(void)
 {
   //ssidbg("%s\n", __func__);
 
@@ -835,6 +836,8 @@ void spi_init()
   regval = getreg32(LM3S_SYSCON_RCGC1);
   regval |= SYSCON_RCGC1_SSI0;
   putreg32(regval, LM3S_SYSCON_RCGC1);
+
+	return 0;
 }
 
 void spi_set_speed(struct spi_slave *slave, uint hz)
@@ -932,9 +935,7 @@ int spi_xfer(struct spi_slave *slave, unsigned int bitlen, const void *dout,
   struct lm3s_spi_slave *lss = to_lm3s_spi_slave(slave);
   uint bytes = bitlen / 8;
 
-#ifdef CONFIG_WATCHDOG
-	watchdog_reset();
-#endif
+	WATCHDOG_RESET();
 
   ssivdbg("%s: bus:%i cs:%i bitlen:%i bytes:%i flags:%lx\n", __func__,
         slave->bus, slave->cs, bitlen, bytes, flags);

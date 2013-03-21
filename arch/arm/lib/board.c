@@ -144,6 +144,7 @@ static int init_baudrate (void)
 	return (0);
 }
 
+#if defined(CONFIG_DISPLAY_BUNNER)
 static int display_banner (void)
 {
 	printf ("\n\n%s\n\n", version_string);
@@ -160,6 +161,7 @@ static int display_banner (void)
 
 	return (0);
 }
+#endif
 
 /*
  * WARNING: this code looks "cleaner" than the PowerPC version, but
@@ -168,6 +170,7 @@ static int display_banner (void)
  * gives a simple yet clear indication which part of the
  * initialization if failing.
  */
+#if defined(CONFIG_DISPLAY_DRAM_CONFIG)
 static int display_dram_config (void)
 {
 	int i;
@@ -191,6 +194,7 @@ static int display_dram_config (void)
 
 	return (0);
 }
+#endif
 
 #if defined(CONFIG_HARD_I2C) || defined(CONFIG_SOFT_I2C)
 static int init_func_i2c (void)

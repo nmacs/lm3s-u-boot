@@ -54,6 +54,8 @@ static inline int test_and_set_bit(int nr, volatile void * addr)
 	unsigned long flags;
 	int out;
 
+	(void)flags;
+
 	local_irq_save(flags);
 	out = __test_and_set_bit(nr, addr);
 	local_irq_restore(flags);
@@ -75,6 +77,8 @@ static inline int test_and_clear_bit(int nr, volatile void * addr)
 {
 	unsigned long flags;
 	int out;
+
+	(void)flags;
 
 	local_irq_save(flags);
 	out = __test_and_clear_bit(nr, addr);
