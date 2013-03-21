@@ -5,6 +5,8 @@
 #define WDT_DEFAULT_TIME	60	/* seconds */
 #define WDT_MAX_TIME		(0xFFFFFFFF / SYSCLK_FREQUENCY)	/* seconds */
 
+static int wd_ready = 0;
+
 static inline void _wdt_unlock(void)
 {
 	putreg32(WATCHDOG_WDTLOCK_MAGIC, LM3S_WATCHDOG_WDTLOCK(CURRENT_WDT));
@@ -42,11 +44,14 @@ static inline void lm3s_wdt_start(void)
 	putreg32(regval, LM3S_WATCHDOG_WDTCTL(CURRENT_WDT));
 	regval |= WATCHDOG_WDTCTL_INTEN_MASK;
 	putreg32(regval, LM3S_WATCHDOG_WDTCTL(CURRENT_WDT));
+
+	wd_ready = 1;
 }
 
 void watchdog_reset(void)
 {
-	lm3s_wdt_reload();
+	if( wd_ready )
+		lm3s_wdt_reload();
 }
 
 int watchdog_init(void)
