@@ -234,12 +234,32 @@
 #define MTDPARTS_DEFAULT "mtdparts=flash:-(root)"
 
 /*
+ * ETH PHY
+ */
+#define CONFIG_KS8851
+#define CONFIG_KS8851_BUS      0
+#define CONFIG_KS8851_CS       2
+#define CONFIG_KS8851_MAXHZ    5000000
+#define CONFIG_KS8851_SPI_MODE SPI_MODE_0
+
+/*
+ * Network
+ */
+#define CONFIG_CMD_NET
+#define CONFIG_NET_MULTI
+#define CONFIG_CMD_PING
+#define CONFIG_CMD_NFS
+#define CONFIG_ETHADDR        4C:22:D0:B8:78:AE
+#define CONFIG_IPADDR         10.65.100.205
+#define CONFIG_GATEWAYIP      10.65.100.1
+#define CONFIG_NETMASK        255.255.255.0
+
+/*
  * Other commands
  */
 #define CONFIG_CMD_ENV
 #define CONFIG_CMD_ECHO   /* echo arguments   */
 #define CONFIG_CMD_RUN    /* run command in env variable  */
-#define CONFIG_CMD_LOADB
 #define CONFIG_CMD_SECLD
 
 #undef CONFIG_CMD_NAND
@@ -255,8 +275,6 @@
 #undef CONFIG_CMD_LOADS  /* loads      */
 #undef CONFIG_CMD_MEMORY /* md mm nm mw cp cmp crc base loop mtest */
 #undef CONFIG_CMD_MISC   /* Misc functions like sleep etc*/
-#undef CONFIG_CMD_NET    /* bootp, tftpboot, rarpboot  */
-#undef CONFIG_CMD_NFS    /* NFS support      */
 #undef CONFIG_CMD_SAVEENV  /* saveenv      */
 #undef CONFIG_CMD_SETGETDCR  /* DCR support on 4xx   */
 #undef CONFIG_CMD_SOURCE /* "source" command support */
@@ -292,21 +310,18 @@
 #define CONFIG_WATCHDOG
 
 /*
- * Boot options
+ * Flash Boot (normal)
  */
-#define CONFIG_BOOTARGS       "ubi.mtd=1 root=ubi0:rootfs rootfstype=ubifs"
-
 #define CONFIG_BOOTCOMMAND    "sf probe 0;ubi part serial0,0;ubifsmount rootfs;" \
                               "secld 0x60400000 ubifs:///boot/linux.bin cramfs:///pub_key;" \
                               "bootm 0x60400080"
 
-#define CONFIG_NFSBOOTCOMMAND "set bootargs root=/dev/nfs nfsroot=${serverip}:${rootpath} ip=${ipaddr}::${gatewayip}:${netmask};" \
-                              "loadb 0x60400000;" \
+/*
+ * Network Boot
+ */
+#define CONFIG_NFSBOOTCOMMAND "set bootargs root=/dev/nfs nfsroot=${serverip}:${rootpath} ip=${ipaddr}::${gatewayip}:${netmask} ubi.mtd=1;" \
+                              "nfs ${rootpath}/boot/linux.bin;" \
                               "bootm 0x60400080"
-
-#define CONFIG_IPADDR         10.65.100.205
-#define CONFIG_GATEWAYIP      10.65.100.1
-#define CONFIG_NETMASK        255.255.255.0
 
 #define CONFIG_SERVERIP       10.65.100.176
 #define CONFIG_ROOTPATH       /nfsroot
