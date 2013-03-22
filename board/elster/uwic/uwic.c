@@ -1,6 +1,7 @@
 #include <common.h>
 #include <asm/io.h>
 #include <stdint.h>
+#include <spi.h>
 #include <asm/arch/lm3s_internal.h>
 #include <asm/arch/hardware.h>
 
@@ -87,6 +88,13 @@ void lowlevel_board_init(void)
   /* Setup SDRAM */
   uwic_setup_sdram();
 }
+
+#ifdef CONFIG_KS8851
+int board_eth_init(void)
+{
+	return ks8851_initialize(CONFIG_KS8851_BUS, CONFIG_KS8851_CS, CONFIG_KS8851_MAXHZ, CONFIG_KS8851_SPI_MODE);
+}
+#endif
 
 int board_init(void)
 {
