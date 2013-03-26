@@ -27,7 +27,7 @@
 
 extern void NetReceive(volatile uchar *, int);
 
-#define MAX_BUF_SIZE    2048
+#define MAX_BUF_SIZE    (4096 + 8)
 
 /* shift for byte-enable data */
 #define BYTE_EN(_x) ((_x) << 2)
@@ -161,43 +161,44 @@ static void ks_fifo_read(ks8851_dev_t *ks, uchar *buff, ushort len)
  */
 static int ksz_recv(struct eth_device *dev)
 {
-    uint    rxh;
-    ushort  rxfc, rxlen, status;
-    ks8851_dev_t *ks = dev->priv;
+	uint    rxh;
+	ushort  rxfc, rxlen, status;
+	ks8851_dev_t *ks = dev->priv;
 
-    status = ks_reg16_read(ks, KS_ISR);
-    if(status & IRQ_RXI == 0)
-        return;
+	status = ks_reg16_read(ks, KS_ISR);
+	if(status & IRQ_RXI == 0)
+		return;
 
-    ks_reg16_write(ks, KS_ISR, IRQ_RXI);
-    rxfc = ks_reg8_read(ks, KS_RXFC);
+	ks_reg16_write(ks, KS_ISR, IRQ_RXI);
+	rxfc = ks_reg8_read(ks, KS_RXFC);
 
-    for (; rxfc != 0; rxfc--) {
-        rxh = ks_reg32_read(ks, KS_RXFHSR);
-        /* the length of the packet includes the 32bit CRC */
-        rxlen = rxh >> 16;
+	for (; rxfc != 0; rxfc--) {
+		rxh = ks_reg32_read(ks, KS_RXFHSR);
+		/* the length of the packet includes the 32bit CRC */
+		rxlen = (rxh >> 16) & 0xFFF;
 
-        /* setup Receive Frame Data Pointer Auto-Increment */
-        ks_reg16_write(ks, KS_RXFDPR, RXFDPR_RXFPAI);
+		/* setup Receive Frame Data Pointer Auto-Increment */
+		ks_reg16_write(ks, KS_RXFDPR, RXFDPR_RXFPAI);
 
-        /* start the packet dma process, and set auto-dequeue rx */
-        ks_reg16_write(ks, KS_RXQCR, RXQCR_SDA | RXQCR_ADRFE);
+		/* start the packet dma process, and set auto-dequeue rx */
+		ks_reg16_write(ks, KS_RXQCR, RXQCR_SDA | RXQCR_ADRFE);
 
-	if (rxlen>1518)
-	{//sometimes recieving big rxlen
-	 printf("rx_err len=%d\n",rxlen);
-	 rxlen = 1518;
+		if(rxlen > 4) {
+			rxlen = ALIGN(rxlen, 4);
+				if (rxlen > (MAX_BUF_SIZE - 8))
+				{
+					printf("rx_err len=%d\n",rxlen);
+					rxlen = MAX_BUF_SIZE - 8;
+				}
+				/* align the packet length to 4 bytes, and add 4 bytes
+						as we're getting the rx status header as well */
+				ks_fifo_read(ks, ks->buff, rxlen + 8);
+
+				NetReceive(ks->buff + 8, rxlen);
+		}
+
+		ks_reg16_write(ks, KS_RXQCR, 0);
 	}
-        if(rxlen > 0) {
-            /* align the packet length to 4 bytes, and add 4 bytes
-               as we're getting the rx status header as well */
-            ks_fifo_read(ks, ks->buff, ALIGN(rxlen, 4) + 8);
-
-            NetReceive(ks->buff + 8, rxlen);
-        }
-
-        ks_reg16_write(ks, KS_RXQCR, 0);
-    }
 }
 
 /*
