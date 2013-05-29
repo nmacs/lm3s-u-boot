@@ -111,7 +111,7 @@ static void image_set_header (void *ptr, struct stat *sbuf, int ifd,
 
 	/* Build new header */
 	image_set_magic (hdr, IH_MAGIC);
-	image_set_time (hdr, sbuf->st_mtime);
+	image_set_time (hdr, 0); /* image_set_time (hdr, sbuf->st_mtime); */
 	image_set_size (hdr, sbuf->st_size - sizeof(image_header_t));
 	image_set_load (hdr, params->addr);
 	image_set_ep (hdr, params->ep);
