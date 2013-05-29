@@ -213,6 +213,7 @@
  */
 #define CONFIG_RBTREE
 #define CONFIG_LZO
+#define CONFIG_LZMA
 
 /*
  * File systems
