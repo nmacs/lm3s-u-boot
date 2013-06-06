@@ -87,7 +87,9 @@ int interrupt_init (void)
 	/*
 	 * setup up stacks if necessary
 	 */
+#if !defined(CONFIG_TM4C) && !defined(CONFIG_LM3S)
 	IRQ_STACK_START_IN = gd->irq_sp + 8;
+#endif
 
 	return 0;
 }
