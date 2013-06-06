@@ -1011,6 +1011,9 @@ ea1788_config: unconfig
 uwic_config: unconfig
 	@$(MKCONFIG) uwic arm cortex-m3 uwic elster lm3s
 
+atlas_config: unconfig
+	@$(MKCONFIG) atlas arm cortex-m4 atlas elster tm4c
+
 #########################################################################
 ## XScale Systems
 #########################################################################

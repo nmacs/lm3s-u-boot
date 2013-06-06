@@ -44,7 +44,6 @@
 #include <malloc.h>
 #include <spi.h>
 #include <stdint.h>
-#include <asm/arch/lm3s_internal.h>
 #include <asm/arch/hardware.h>
 #include <watchdog.h>
 
@@ -280,9 +279,9 @@ static void ssi_setfrequency(struct lm3s_spi_slave *priv, uint32_t frequency)
    *  than the SSIClk."
    */
 
-  if (frequency > SYSCLK_FREQUENCY/2)
+  if (frequency > CONFIG_SYSCLK_FREQUENCY/2)
   {
-    frequency = SYSCLK_FREQUENCY/2;
+    frequency = CONFIG_SYSCLK_FREQUENCY/2;
   }
 
   /* Find optimal values for CPSDVSR and SCR.  This loop is inefficient,
@@ -305,7 +304,7 @@ static void ssi_setfrequency(struct lm3s_spi_slave *priv, uint32_t frequency)
    *   50,000,000 / (2 * (1)) = 25,000,000
    */
 
-  maxdvsr = SYSCLK_FREQUENCY / frequency;
+  maxdvsr = CONFIG_SYSCLK_FREQUENCY / frequency;
   cpsdvsr = 0;
   do
   {
@@ -322,7 +321,7 @@ static void ssi_setfrequency(struct lm3s_spi_slave *priv, uint32_t frequency)
   priv->cr0 = regval;
 
   /* Calcluate the actual frequency */
-  priv->actual = SYSCLK_FREQUENCY / (cpsdvsr * (scr + 1));
+  priv->actual = CONFIG_SYSCLK_FREQUENCY / (cpsdvsr * (scr + 1));
 }
 
 /****************************************************************************
@@ -817,26 +816,19 @@ int spi_cs_is_valid(unsigned int bus, unsigned int cs)
 
 void spi_cs_activate(struct spi_slave *slave)
 {
-  lm3s_gpiowrite(slave->cs, 0);
+  gpiowrite(slave->cs, 0);
   ssivdbg("%s: SPI_CS_GPIO:%x\n", __func__, slave->cs);
 }
 
 void spi_cs_deactivate(struct spi_slave *slave)
 {
-  lm3s_gpiowrite(slave->cs, 1);
+  gpiowrite(slave->cs, 1);
   ssivdbg("%s: SPI_CS_GPIO:%x\n", __func__, slave->cs);
 }
 
 int spi_init(void)
 {
-  //ssidbg("%s\n", __func__);
-
-  uint32_t regval;
-
-  regval = getreg32(LM3S_SYSCON_RCGC1);
-  regval |= SYSCON_RCGC1_SSI0;
-  putreg32(regval, LM3S_SYSCON_RCGC1);
-
+  ssi_clock_ctrl(0, SYS_ENABLE_CLOCK);
 	return 0;
 }
 
@@ -937,7 +929,7 @@ int spi_xfer(struct spi_slave *slave, unsigned int bitlen, const void *dout,
 
 	WATCHDOG_RESET();
 
-  ssivdbg("%s: bus:%i cs:%i bitlen:%i bytes:%i flags:%lx\n", __func__,
+  ssivdbg("%s: bus:%i cs:%x bitlen:%i bytes:%i flags:%lx\n", __func__,
         slave->bus, slave->cs, bitlen, bytes, flags);
 
   if (bitlen == 0)

@@ -120,7 +120,7 @@ int do_bootm_linux(int flag, int argc, char *argv[], bootm_headers_t *images)
 		return bootm_linux_fdt(machid, images);
 #endif
 
-#ifdef CONFIG_ARCH_LM3S1D21
+#if defined(CONFIG_ARCH_LM3S1D21) || defined(CONFIG_ARCH_TM4C12)
 	kernel_entry = (void (*)(int, int, uint))((unsigned int)images->ep + 1);
 #else
 	kernel_entry = (void (*)(int, int, uint))images->ep;
