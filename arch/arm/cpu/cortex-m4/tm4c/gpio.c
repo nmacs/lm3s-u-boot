@@ -539,6 +539,16 @@ static inline void lm3s_gpiopadtype(uint32_t base, uint32_t pin, uint32_t cfgset
 #endif
 }
 
+static void gpioanmode(uint32_t base, uint32_t pin, int ctrl)
+{
+	uint32_t regval = getreg32(base + LM3S_GPIO_AMSEL_OFFSET);
+	if (ctrl)
+		regval |= 1 << pin;
+	else
+		regval &= ~(1 << pin);
+	putreg32(regval, base + LM3S_GPIO_AMSEL_OFFSET);
+}
+
 /****************************************************************************
  * Name: lm3s_initoutput
  *
@@ -743,6 +753,10 @@ int configgpio(uint32_t cfgset)
     {
       lm3s_initoutput(cfgset);
     }
+  else if (func == GPIO_FUNC_ANINPUT)
+  {
+    gpioanmode(base, pin, 1);
+  }
 
 
   /* Special setup for interrupt GPIO pins */
