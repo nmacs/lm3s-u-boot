@@ -11,7 +11,8 @@
  */
 #define CONFIG_XTAL_FREQUENCY       12000000  /* 12MHz */
 #define CONFIG_SYSCLK_FREQUENCY     60000000  /* 60MHz */
-#define CONFIG_ALT_FREQUENCY        16000000  /* 16MHz */
+#define CONFIG_PIOSC_FREQUENCY      16000000  /* 16MHz */
+#define CONFIG_ALT_FREQUENCY        CONFIG_PIOSC_FREQUENCY
 
 /*
  * Linux machine type

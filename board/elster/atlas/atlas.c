@@ -69,12 +69,18 @@ void red_LED_toggle(void)
 		gpiowrite(GPIO_CPU_LED, 1);
 }
 
+static void sleep_if_outage(void)
+{
+  while(gpioread(GPIO_POWER_FAIL, 0) != 0) {}
+}
+
 void lowlevel_board_init(void)
 {
-	clockconfig();
 	setup_pins();
-  epi_clock_ctrl(SYS_ENABLE_CLOCK);
-  setup_sdram();
+	sleep_if_outage();
+	clockconfig();
+	epi_clock_ctrl(SYS_ENABLE_CLOCK);
+	setup_sdram();
 }
 
 #ifdef CONFIG_KS8851
@@ -133,6 +139,19 @@ static void setup_pins(void)
   configgpio(GPIO_EPI0_S29);
   configgpio(GPIO_EPI0_S30);
   configgpio(GPIO_EPI0_S31);
+	
+	configgpio(GPIO_VUNREG_MON);
+	configgpio(GPIO_POWER_FAIL);
+	
+	configgpio(GPIO_CAP_CHRG);
+	configgpio(GPIO_CAP_STATUS);
+
+	configgpio(GPIO_TL_PWR_ON);
+	configgpio(GPIO_TL_SHUTDOWN);
+	configgpio(GPIO_TL_PWRMON);
+	configgpio(GPIO_TL_SPI_MRDY);
+	configgpio(GPIO_TL_SPI_SRDY);
+	configgpio(GPIO_TL_IF_EN);
 
   configgpio(GPIO_UART0_RX);
   configgpio(GPIO_UART0_TX);
@@ -169,7 +188,7 @@ static void setup_sdram(void)
   regval = EPI_CFG_MODE_SDRAM;
   putreg32(regval, LM3S_EPI0_CFG);
 
-  regval = EPI_SDRAMCFG_SIZE_8MB | EPI_SDRAMCFG_FREQ_30_50MHZ | EPI_SDRAMCFG_RFSH(1024);
+  regval = EPI_SDRAMCFG_SIZE_8MB | EPI_SDRAMCFG_FREQ_50_100MHZ | EPI_SDRAMCFG_RFSH(1024);
   putreg32(regval, LM3S_EPI0_SDRAMCFG);
 
   regval = EPI_ADDRMAP_ERADR_6 | EPI_ADDRMAP_ERSZ_16MB;
