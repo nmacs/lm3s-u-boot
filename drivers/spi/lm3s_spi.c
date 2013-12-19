@@ -69,7 +69,7 @@ struct lm3s_spi_slave {
 };
 
 #ifdef CONFIG_BOARD_TRANSLATE_CS
-extern int board_translate_cs(unsigned int* translated_cs, unsigned int cs);
+extern int board_translate_cs(unsigned int* translated_cs, unsigned int cs, unsigned int bus);
 #endif
 
 /* The number of (16-bit) words that will fit in the Tx FIFO */
@@ -91,7 +91,7 @@ extern int board_translate_cs(unsigned int* translated_cs, unsigned int cs);
 #define to_lm3s_spi_slave(s) container_of(s, struct lm3s_spi_slave, slave)
 #define SSI_BASE LM3S_SSI0_BASE
 
-//#define SSI_DEBUG          /* Define to enable debug */
+#define SSI_DEBUG          /* Define to enable debug */
 //#define SSI_VERBOSE_DEBUG  /* Define to enable verbose debug */
 
 #ifdef SSI_DEBUG
@@ -804,7 +804,7 @@ int spi_cs_is_valid(unsigned int bus, unsigned int cs)
   }
 
 #ifdef CONFIG_BOARD_TRANSLATE_CS
-  if( board_translate_cs(&cs, cs) != 0 )
+  if( board_translate_cs(&cs, cs, bus) != 0 )
   {
     ssidbg("%s: invalid cs\n", __func__);
     return 0;
@@ -816,19 +816,22 @@ int spi_cs_is_valid(unsigned int bus, unsigned int cs)
 
 void spi_cs_activate(struct spi_slave *slave)
 {
-  gpiowrite(slave->cs, 0);
+  if (slave->cs)
+    gpiowrite(slave->cs, 0);
   ssivdbg("%s: SPI_CS_GPIO:%x\n", __func__, slave->cs);
 }
 
 void spi_cs_deactivate(struct spi_slave *slave)
 {
-  gpiowrite(slave->cs, 1);
+  if (slave->cs)
+    gpiowrite(slave->cs, 1);
   ssivdbg("%s: SPI_CS_GPIO:%x\n", __func__, slave->cs);
 }
 
 int spi_init(void)
 {
   ssi_clock_ctrl(0, SYS_ENABLE_CLOCK);
+	ssi_clock_ctrl(1, SYS_ENABLE_CLOCK);
 	return 0;
 }
 
@@ -851,7 +854,7 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
   }
 
 #ifdef CONFIG_BOARD_TRANSLATE_CS
-  if( board_translate_cs(&cs, cs) != 0 )
+  if( board_translate_cs(&cs, cs, bus) != 0 )
   {
     ssidbg("%s: invalid cs\n", __func__);
     return 0;
@@ -889,7 +892,6 @@ void spi_free_slave(struct spi_slave *slave)
 int spi_claim_bus(struct spi_slave *slave)
 {
   struct lm3s_spi_slave *lss = to_lm3s_spi_slave(slave);
-
   ssivdbg("%s: bus:%i cs:%x\n", __func__, slave->bus, slave->cs);
 
   /* Set CR1 */
