@@ -291,8 +291,8 @@
 #define CONFIG_NFSBOOTCOMMAND "dhcp; bootm 0x60400080"
 
 #define CONFIG_BOOTFILE      "linux.bin"
-#define CONFIG_SERVERIP       10.65.100.176
-#define CONFIG_ROOTPATH       /nfsroot
+#define CONFIG_SERVERIP       255.255.255.255
+//#define CONFIG_ROOTPATH       /nfsroot
 
 /*
  * LibTomCrypt & LibTomMath
