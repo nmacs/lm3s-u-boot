@@ -87,6 +87,9 @@ uchar default_environment[] = {
 #ifdef	CONFIG_ETH5ADDR
 	"eth5addr="	MK_STR(CONFIG_ETH5ADDR)		"\0"
 #endif
+#ifdef	CONFIG_FLASHFORMAT
+	"flashformat="	CONFIG_FLASHFORMAT		"\0"
+#endif
 #ifdef	CONFIG_IPADDR
 	"ipaddr="	MK_STR(CONFIG_IPADDR)		"\0"
 #endif
@@ -112,7 +115,7 @@ uchar default_environment[] = {
 	"hostname="	MK_STR(CONFIG_HOSTNAME)		"\0"
 #endif
 #ifdef	CONFIG_BOOTFILE
-	"bootfile="	MK_STR(CONFIG_BOOTFILE)		"\0"
+	"bootfile="	CONFIG_BOOTFILE		"\0"
 #endif
 #ifdef	CONFIG_LOADADDR
 	"loadaddr="	MK_STR(CONFIG_LOADADDR)		"\0"

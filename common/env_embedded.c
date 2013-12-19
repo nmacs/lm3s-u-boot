@@ -141,6 +141,9 @@ env_t environment __PPCENV__ = {
 #ifdef	CONFIG_ETH5ADDR
 	"eth5addr="	MK_STR(CONFIG_ETH5ADDR)		"\0"
 #endif
+#ifdef	CONFIG_FLASHFORMAT
+	"flashformat="	CONFIG_FLASHFORMAT		"\0"
+#endif
 #ifdef	CONFIG_ETHPRIME
 	"ethprime="	CONFIG_ETHPRIME			"\0"
 #endif
