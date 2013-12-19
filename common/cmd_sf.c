@@ -251,6 +251,19 @@ static int do_spi_flash_erase(int argc, char * const argv[])
 	return 0;
 }
 
+static int do_spi_flash_eraseall(int argc, char * const argv[])
+{
+	int ret;
+
+	ret = spi_flash_erase(flash, 0, flash->size);
+	if (ret) {
+		printf("SPI flash %s failed\n", argv[0]);
+		return 1;
+	}
+
+	return 0;
+}
+
 static int do_spi_flash(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	const char *cmd;
@@ -279,6 +292,8 @@ static int do_spi_flash(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 		ret = do_spi_flash_read_write(argc, argv);
 	else if (strcmp(cmd, "erase") == 0)
 		ret = do_spi_flash_erase(argc, argv);
+	else if (strcmp(cmd, "eraseall") == 0)
+		ret = do_spi_flash_eraseall(argc, argv);
 	else
 		ret = -1;
 
