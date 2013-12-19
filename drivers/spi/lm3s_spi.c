@@ -91,7 +91,7 @@ extern int board_translate_cs(unsigned int* translated_cs, unsigned int cs, unsi
 #define to_lm3s_spi_slave(s) container_of(s, struct lm3s_spi_slave, slave)
 #define SSI_BASE LM3S_SSI0_BASE
 
-#define SSI_DEBUG          /* Define to enable debug */
+//#define SSI_DEBUG          /* Define to enable debug */
 //#define SSI_VERBOSE_DEBUG  /* Define to enable verbose debug */
 
 #ifdef SSI_DEBUG
