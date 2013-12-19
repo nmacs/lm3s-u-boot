@@ -43,9 +43,10 @@ union ks8851_tx_hdr {
 typedef struct ks8851_device {
 	struct eth_device	*dev;	/* back pointer */
 	struct spi_slave	*slave;
-        ushort  fid;
+	ushort  fid;
+	ushort  rc_rxqcr;
 	uchar   buff[MAX_BUF_SIZE];
-        union ks8851_tx_hdr txh;
+	union ks8851_tx_hdr txh;
 } ks8851_dev_t;
 
 uchar def_mac_addr[] = {0x00, 0x10, 0xA1, 0x86, 0x95, 0x11};
@@ -164,41 +165,112 @@ static int ksz_recv(struct eth_device *dev)
 	uint    rxh;
 	ushort  rxfc, rxlen, status;
 	ks8851_dev_t *ks = dev->priv;
+	
+	//status = ks_reg16_read(ks, KS_ISR);
+	//if(status & IRQ_RXI == 0)
+	//	return 0;
 
-	status = ks_reg16_read(ks, KS_ISR);
-	if(status & IRQ_RXI == 0)
-		return;
-
-	ks_reg16_write(ks, KS_ISR, IRQ_RXI);
 	rxfc = ks_reg8_read(ks, KS_RXFC);
+	debug("%s: rxfc:%u\n", __func__, (unsigned)rxfc);
 
 	for (; rxfc != 0; rxfc--) {
 		rxh = ks_reg32_read(ks, KS_RXFHSR);
 		/* the length of the packet includes the 32bit CRC */
 		rxlen = (rxh >> 16) & 0xFFF;
+		
+		debug("ksz8851: rxh:%u, rxlen:%i\n", rxh, (int)rxlen);
 
 		/* setup Receive Frame Data Pointer Auto-Increment */
 		ks_reg16_write(ks, KS_RXFDPR, RXFDPR_RXFPAI);
 
 		/* start the packet dma process, and set auto-dequeue rx */
-		ks_reg16_write(ks, KS_RXQCR, RXQCR_SDA | RXQCR_ADRFE);
+		ks_reg16_write(ks, KS_RXQCR, ks->rc_rxqcr | RXQCR_SDA | RXQCR_ADRFE);
 
 		if(rxlen > 4) {
-			rxlen = ALIGN(rxlen, 4);
-				if (rxlen > (MAX_BUF_SIZE - 8))
-				{
-					printf("rx_err len=%d\n",rxlen);
-					rxlen = MAX_BUF_SIZE - 8;
-				}
-				/* align the packet length to 4 bytes, and add 4 bytes
-						as we're getting the rx status header as well */
-				ks_fifo_read(ks, ks->buff, rxlen + 8);
+			unsigned int rxalign;
+			rxlen -= 4;
+			debug("ksz8851: rxlen:%i\n", (int)rxlen);
+			rxalign = ALIGN(rxlen, 4);
+			if ((rxlen + 8) > MAX_BUF_SIZE)
+			{
+				printf("rx_err: buffer overflow len=%d\n", rxlen);
+				rxalign = MAX_BUF_SIZE - 8;
+			}
+			/* align the packet length to 4 bytes, and add 4 bytes
+					as we're getting the rx status header as well */
+			ks_fifo_read(ks, ks->buff, rxalign + 8);
 
-				NetReceive(ks->buff + 8, rxlen);
+			NetReceive(ks->buff + 8, rxlen);
 		}
 
-		ks_reg16_write(ks, KS_RXQCR, 0);
+		ks_reg16_write(ks, KS_RXQCR, ks->rc_rxqcr);
 	}
+	
+			//memset(ks->buff, 0, MAX_BUF_SIZE);
+	return 0;
+}
+
+static int ksz_process(struct eth_device *dev)
+{
+	unsigned status;
+	unsigned handled = 0;
+	ks8851_dev_t *ks = dev->priv;
+	
+	status = ks_reg16_read(ks, KS_ISR);
+	if (!(status & IRQ_RXI))
+		return 0;
+	
+	debug("%s: status 0x%04x\n", __func__, status);
+	
+	if (status & IRQ_LCI)
+		handled |= IRQ_LCI;
+	
+	if (status & IRQ_LDI) {
+		unsigned short pmecr = ks_reg16_read(ks, KS_PMECR);
+		pmecr &= ~PMECR_WKEVT_MASK;
+		ks_reg16_write(ks, KS_PMECR, pmecr | PMECR_WKEVT_LINK);
+
+		handled |= IRQ_LDI;
+	}
+	
+	if (status & IRQ_RXPSI)
+		handled |= IRQ_RXPSI;
+	
+	if (status & IRQ_TXI) {
+		handled |= IRQ_TXI;
+	}
+	
+	if (status & IRQ_RXI)
+		handled |= IRQ_RXI;
+	
+	if (status & IRQ_SPIBEI) {
+		debug("%s: spi bus error\n", __func__);
+		handled |= IRQ_SPIBEI;
+	}
+	
+	ks_reg16_write(ks, KS_ISR, handled);
+	
+	if (status & IRQ_RXI)
+		ksz_recv(dev);
+	
+	/* if something stopped the rx process,
+	 * then do something about restarting it.
+	 */
+	if (status & IRQ_RXPSI) {
+		debug("%s: restart receive\n", __func__);
+		/* setup receiver control */
+		ks_reg16_write(ks, KS_RXCR1, (RXCR1_RXPAFMA |   /* mac filter */
+														RXCR1_RXFCE |       /* enable flow control */
+														RXCR1_RXUE |        /* unicast enable */
+														RXCR1_RXE |         /* enable rx block */
+														RXCR1_RXBE));       /* broadcast enable */
+		/* transfer entire frames out in one go */
+		ks_reg16_write(ks, KS_RXCR2, RXCR2_SRDBL_FRAME);
+	}
+	
+	debug("%s: done\n", __func__);
+	
+	return 0;
 }
 
 /*
@@ -218,14 +290,14 @@ static int ksz_send(struct eth_device *dev,volatile void *txp, int len)
 	ks->txh.txw[1] = fid;
 	ks->txh.txw[2] = len;
 
-	ks_reg16_write(ks, KS_RXQCR, RXQCR_SDA);
+	ks_reg16_write(ks, KS_RXQCR, ks->rc_rxqcr | RXQCR_SDA);
 
 	spi_claim_bus(ks->slave);
 	spi_xfer(ks->slave, 8*5, &ks->txh.txb[1], 0, SPI_XFER_BEGIN );
 	spi_xfer(ks->slave, 8*ALIGN(len, 4), (uchar*)txp, 0, SPI_XFER_END );
 	spi_release_bus(ks->slave);
-
-	ks_reg16_write(ks, KS_RXQCR, 0);
+	ks_reg16_write(ks, KS_RXQCR, ks->rc_rxqcr);
+	ks_reg16_write(ks, KS_TXQCR, TXQCR_METFE);
 }
 /**
  * ks8851_read_selftest - read the selftest memory info.
@@ -259,6 +331,14 @@ static int ks_read_selftest(ks8851_dev_t *ks)
 	return 0;
 }
 
+static void ks8851_soft_reset(ks8851_dev_t *ks, unsigned op)
+{
+	ks_reg16_write(ks, KS_GRR, op);
+	udelay(1000);	/* wait a short time to effect reset */
+	ks_reg16_write(ks, KS_GRR, 0);
+	udelay(1000);	/* wait for condition to clear */
+}
+
 /*
  * set power mode of the device
  */
@@ -278,38 +358,48 @@ static void ks_powermode_set(ks8851_dev_t *ks, ushort pwrmode)
  */
 static void ks_config(ks8851_dev_t *ks)
 {
-    /* auto-increment tx data, reset tx pointer */
-    ks_reg16_write(ks, KS_TXFDPR, TXFDPR_TXFPAI);
-
-    /* Enable QMU TxQ Auto-Enqueue frame */
-    ks_reg16_write(ks, KS_TXQCR, TXQCR_AETFE);
-
     /* setup transmission parameters */
     ks_reg16_write(ks, KS_TXCR, (TXCR_TXE |     /* enable transmit process */
-                            TXCR_TCGIP |
-                            TXCR_TCGTCP |
-                            TXCR_TCGICMP |
                             TXCR_TXPE |     /* pad to min length */
                             TXCR_TXCRC |    /* add CRC */
                             TXCR_TXFCE));   /* enable flow control */
 
-    /* Setup Receive Frame Threshold - 1 frame */
-    ks_reg16_write(ks, KS_RXFCTR, 1 << RXFCTR_RXFCT_SHIFT);
+    /* Enable QMU TxQ Auto-Enqueue frame */
+//    ks_reg16_write(ks, KS_TXQCR, TXQCR_AETFE);
+
+    /* auto-increment tx data, reset tx pointer */
+    ks_reg16_write(ks, KS_TXFDPR, TXFDPR_TXFPAI);
 
     /* setup receiver control */
     ks_reg16_write(ks, KS_RXCR1, (RXCR1_RXPAFMA |   /* mac filter */
-                            RXCR1_RXUDPFCC |
-                            RXCR1_RXTCPFCC |
-                            RXCR1_RXIPFCC |
-                            RXCR1_RXME |
-                            RXCR1_RXAE |
                             RXCR1_RXFCE |       /* enable flow control */
                             RXCR1_RXUE |        /* unicast enable */
-                            RXCR1_RXE));        /* enable rx block */
-                          /*  RXCR1_RXBE |         broadcast enable */
+                            RXCR1_RXE |         /* enable rx block */
+                            RXCR1_RXBE));       /* broadcast enable */
 
     /* transfer entire frames out in one go */
     ks_reg16_write(ks, KS_RXCR2, RXCR2_SRDBL_FRAME);
+
+    /* set receive counter timeouts */
+    ks_reg16_write(ks, KS_RXDTTR, 1000); /* 1ms after first frame to IRQ */
+    ks_reg16_write(ks, KS_RXDBCTR, 4096); /* >4Kbytes in buffer to IRQ */
+    ks_reg16_write(ks, KS_RXFCTR, 10);  /* 10 frames to IRQ */
+
+		ks->rc_rxqcr = (RXQCR_RXFCTE |  /* IRQ on frame count exceeded */
+			RXQCR_RXDBCTE | /* IRQ on byte count exceeded */
+			RXQCR_RXDTTE);  /* IRQ on time exceeded */
+
+    ks_reg16_write(ks, KS_RXQCR, ks->rc_rxqcr);
+
+#define STD_IRQ (IRQ_LCI |	/* Link Change */	\
+		 IRQ_TXI |	/* TX done */		\
+		 IRQ_RXI |	/* RX done */		\
+		 IRQ_SPIBEI |	/* SPI bus error */	\
+		 IRQ_TXPSI |	/* TX process stop */	\
+		 IRQ_RXPSI)	/* RX process stop */
+
+    ks_reg16_write(ks, KS_ISR, STD_IRQ);
+    ks_reg16_write(ks, KS_IER, STD_IRQ);
 }
 
 static int wait_link_up(ks8851_dev_t *ks, int timeout)
@@ -337,11 +427,7 @@ static int ksz_init(struct eth_device *dev, bd_t *bis)
     /* bring chip out of any power saving mode it was in */
     ks_powermode_set(ks, PMECR_PM_NORMAL);
 
-    /* issue a global soft reset to reset the device. */
-    ks_reg16_write(ks, KS_GRR, GRR_GSR);
-    udelay(1000);  /* wait a short time to effect reset */
-    ks_reg16_write(ks, KS_GRR, 0);
-    udelay(1000);  /* wait for condition to clear */
+		ks8851_soft_reset(ks, GRR_GSR);
 
     /* simple check for a valid chip being connected to the bus */
     chip_id = ks_reg16_read(ks, KS_CIDER);
@@ -357,10 +443,9 @@ static int ksz_init(struct eth_device *dev, bd_t *bis)
     ks_read_selftest(ks);
 
     ks_mac_set(ks);
-    ks_config(ks);
 
-    ks_reg16_write(ks, KS_ISR, 0xffff);
-    ks_reg16_write(ks, KS_IER, IRQ_RXI);
+		ks8851_soft_reset(ks, GRR_QMU);
+    ks_config(ks);
 
     return wait_link_up(ks, 5000);
 }
@@ -423,7 +508,8 @@ int ks8851_initialize(unsigned int bus, unsigned int cs,
 	dev->init = ksz_init;
 	dev->halt = ksz_halt;
 	dev->send = ksz_send;
-	dev->recv = ksz_recv;
+	//dev->recv = ksz_recv;
+	dev->recv = ksz_process;
 
 	sprintf(dev->name, "ksz8851:%i.%i", bus,cs);
 	eth_register(dev);
