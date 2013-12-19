@@ -2,11 +2,16 @@
 #define __UWIC_PINS_H
 
 #define GPIO_SSI0_CLK    (GPIO_FUNC_PFIO      | GPIO_PORTA | GPIO_DF(15) | 2)       /* PA2: SSI0 clock (SSI0Clk) */
-#define GPIO_SSI0_RX     (GPIO_FUNC_PFINPUT   | GPIO_PORTA | GPIO_DF(15) | 4)       /* PA4: SSI0 receive (SSI0Rx) */
-#define GPIO_SSI0_TX     (GPIO_FUNC_PFOUTPUT  | GPIO_PORTA | GPIO_DF(15) | 5)       /* PA5: SSI0 transmit (SSI0Tx) */
-#define GPIO_SSI0_CS_SF  (GPIO_FUNC_OUTPUT    | GPIO_PORTF | 3 | GPIO_VALUE_ONE)    /* PA7: SSI0 Serial Flash chip select */
-#define GPIO_SSI0_CS_EE  (GPIO_FUNC_OUTPUT    | GPIO_PORTF | 2 | GPIO_VALUE_ONE)    /* PA6: SSI0 EEPROM chip select */
-#define GPIO_SSI0_CS_ETH (GPIO_FUNC_OUTPUT    | GPIO_PORTA | 3 | GPIO_VALUE_ONE)    /* PA3: SSI0 ETH chip select */
+#define GPIO_SSI0_TX     (GPIO_FUNC_PFOUTPUT  | GPIO_PORTA | GPIO_DF(15) | 4)       /* PA4: SSI0 receive (SSI0Tx) */
+#define GPIO_SSI0_RX     (GPIO_FUNC_PFINPUT   | GPIO_PORTA | GPIO_DF(15) | 5)       /* PA5: SSI0 transmit (SSI0Tx) */
+
+#define GPIO_SSI1_CLK    (GPIO_FUNC_PFIO      | GPIO_PORTB | GPIO_DF(15) | 5)       /* PA2: SSI1 clock (SSI1Clk) */
+#define GPIO_SSI1_TX     (GPIO_FUNC_PFOUTPUT  | GPIO_PORTE | GPIO_DF(15) | 4)       /* PA4: SSI1 transmit (SSI1Tx) */
+#define GPIO_SSI1_RX     (GPIO_FUNC_PFINPUT   | GPIO_PORTE | GPIO_DF(15) | 5)       /* PA5: SSI1 receive (SSI1Rx) */
+
+#define GPIO_SSI_CS_SF   (GPIO_FUNC_OUTPUT    | GPIO_PORTF | 3 | GPIO_VALUE_ONE)    /* PA7: SSI0 Serial Flash chip select */
+#define GPIO_SSI_CS_EE   (GPIO_FUNC_OUTPUT    | GPIO_PORTF | 2 | GPIO_VALUE_ONE)    /* PA6: SSI0 EEPROM chip select */
+#define GPIO_SSI_CS_ETH  (GPIO_FUNC_OUTPUT    | GPIO_PORTB | 4 | GPIO_VALUE_ONE)    /* Use SSI1 Fss signal instead of CS */
 
 #define GPIO_ETH_INTRN   (GPIO_FUNC_INTERRUPT | GPIO_PORTF | 1 | GPIO_INT_LOWLEVEL)/* PG5: ETH chip interrupt */
 
@@ -21,8 +26,6 @@
 #define GPIO_TL_PWR_ON   (GPIO_FUNC_OUTPUT    | GPIO_PORTE | 3 | GPIO_VALUE_ONE)
 #define GPIO_TL_SHUTDOWN (GPIO_FUNC_OUTPUT    | GPIO_PORTE | 2 | GPIO_VALUE_ONE)
 #define GPIO_TL_PWRMON   (GPIO_FUNC_ODINPUT   | GPIO_PORTP | 1)
-#define GPIO_TL_SPI_MRDY (GPIO_FUNC_OUTPUT    | GPIO_PORTE | 5)
-#define GPIO_TL_SPI_SRDY (GPIO_FUNC_INPUT     | GPIO_PORTE | 4)
 #define GPIO_TL_IF_EN    (GPIO_FUNC_OUTPUT    | GPIO_PORTB | 4)
 
 #define GPIO_UART0_TX    (GPIO_FUNC_PFIO      | GPIO_PORTA | GPIO_DF(1) | 1 )      /* PA1: UART 0 transmit (U0Tx) */

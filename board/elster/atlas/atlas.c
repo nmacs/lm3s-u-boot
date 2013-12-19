@@ -149,8 +149,6 @@ static void setup_pins(void)
 	configgpio(GPIO_TL_PWR_ON);
 	configgpio(GPIO_TL_SHUTDOWN);
 	configgpio(GPIO_TL_PWRMON);
-	configgpio(GPIO_TL_SPI_MRDY);
-	configgpio(GPIO_TL_SPI_SRDY);
 	configgpio(GPIO_TL_IF_EN);
 
   configgpio(GPIO_UART0_RX);
@@ -168,11 +166,16 @@ static void setup_pins(void)
   configgpio(GPIO_SSI0_CLK);
   configgpio(GPIO_SSI0_RX);
   configgpio(GPIO_SSI0_TX);
+
+	configgpio(GPIO_SSI1_CLK);
+	//configgpio(GPIO_SSI1_FSS);
+  configgpio(GPIO_SSI1_RX);
+  configgpio(GPIO_SSI1_TX);
 	
-  configgpio(GPIO_SSI0_CS_EE);
-  configgpio(GPIO_SSI0_CS_SF);
-  configgpio(GPIO_SSI0_CS_ETH);
-	
+  configgpio(GPIO_SSI_CS_EE);
+  configgpio(GPIO_SSI_CS_SF);
+	configgpio(GPIO_SSI_CS_ETH);
+
   configgpio(GPIO_ETH_INTRN);
 
   configgpio(GPIO_CPU_LED);
@@ -188,32 +191,43 @@ static void setup_sdram(void)
   regval = EPI_CFG_MODE_SDRAM;
   putreg32(regval, LM3S_EPI0_CFG);
 
-  regval = EPI_SDRAMCFG_SIZE_8MB | EPI_SDRAMCFG_FREQ_50_100MHZ | EPI_SDRAMCFG_RFSH(1024);
+  regval = EPI_SDRAMCFG_SIZE_32MB | EPI_SDRAMCFG_FREQ_50_100MHZ | EPI_SDRAMCFG_RFSH(1024);
   putreg32(regval, LM3S_EPI0_SDRAMCFG);
 
-  regval = EPI_ADDRMAP_ERADR_6 | EPI_ADDRMAP_ERSZ_16MB;
+  regval = EPI_ADDRMAP_ERADR_6 | EPI_ADDRMAP_ERSZ_512MB;
   putreg32(regval, LM3S_EPI0_ADDRMAP);
 
   /* Waite for SDRAM is ready */
   while( (getreg32(LM3S_EPI0_STAT) & EPI_STAT_INITSEQ_MASK) ) {}
 }
 
-int board_translate_cs(unsigned int* translated_cs, unsigned int cs)
+int board_translate_cs(unsigned int* translated_cs, unsigned int cs, unsigned int bus)
 {
-  switch(cs)
-  {
-  case 0:
-    *translated_cs = GPIO_SSI0_CS_SF;
-    return 0;
-  case 1:
-    *translated_cs = GPIO_SSI0_CS_EE;
-    return 0;
-  case 2:
-    *translated_cs = GPIO_SSI0_CS_ETH;
-    return 0;
-  default:
-    return -1;
-  }
+  if (bus == 0) {
+		switch (cs)
+		{
+		case 0:
+			*translated_cs = GPIO_SSI_CS_SF;
+			return 0;
+		case 1:
+			*translated_cs = GPIO_SSI_CS_EE;
+			return 0;
+		default:
+			return -1;
+		}
+	}
+	else if (bus == 1) {
+		switch (cs)
+		{
+		case 0:
+			*translated_cs = GPIO_SSI_CS_ETH;
+			return 0;
+		default:
+			return -1;
+		}
+	}
+	else
+		return -1;
 }
 
 extern size_t *_u_boot_bss_start;

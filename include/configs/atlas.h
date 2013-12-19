@@ -86,6 +86,7 @@
  */
 #define CONFIG_SPI_FLASH
 #define CONFIG_SPI_FLASH_STMICRO
+#define CONFIG_SPI_FLASH_WINBOND
 
 /*
  * No support for IRQs
@@ -193,12 +194,14 @@
 #define MTDIDS_DEFAULT "serial0=flash"
 #define MTDPARTS_DEFAULT "mtdparts=flash:-(root)"
 
+#define CONFIG_FLASHFORMAT "sf probe 0;sf eraseall;ubi part serial0,0;ubi create rootfs"
+
 /*
  * ETH PHY
  */
 #define CONFIG_KS8851
-#define CONFIG_KS8851_BUS      0
-#define CONFIG_KS8851_CS       2
+#define CONFIG_KS8851_BUS      1
+#define CONFIG_KS8851_CS       0
 #define CONFIG_KS8851_MAXHZ    5000000
 #define CONFIG_KS8851_SPI_MODE SPI_MODE_0
 
@@ -209,6 +212,7 @@
 #define CONFIG_NET_MULTI
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_NFS
+#define CONFIG_CMD_DHCP
 #define CONFIG_ETHADDR        4C:22:D0:B8:78:AE
 #define CONFIG_IPADDR         10.65.100.205
 #define CONFIG_GATEWAYIP      10.65.100.1
@@ -280,10 +284,13 @@
 /*
  * Network Boot
  */
-#define CONFIG_NFSBOOTCOMMAND "set bootargs debug console=ttyS1,115200 root=/dev/nfs nfsroot=${serverip}:${rootpath} ip=${ipaddr}::${gatewayip}:${netmask} ubi.mtd=1;" \
+/*#define CONFIG_NFSBOOTCOMMAND "set bootargs debug console=ttyS1,115200 root=/dev/nfs nfsroot=${serverip}:${rootpath} ip=${ipaddr}::${gatewayip}:${netmask} ubi.mtd=1;" \
                               "nfs ${rootpath}/boot/linux.bin;" \
                               "bootm 0x60400080"
+*/
+#define CONFIG_NFSBOOTCOMMAND "dhcp; bootm 0x60400080"
 
+#define CONFIG_BOOTFILE      "linux.bin"
 #define CONFIG_SERVERIP       10.65.100.176
 #define CONFIG_ROOTPATH       /nfsroot
 
