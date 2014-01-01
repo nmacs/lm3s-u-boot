@@ -35,6 +35,28 @@
                          SYSCON_MEMTIM0_EBCHT_MASK | \
                          SYSCON_MEMTIM0_EWS_MASK | \
                          SYSCON_MEMTIM0_EBCE_MASK)
+#elif CONFIG_SYSCLK_FREQUENCY == 120000000
+#  define PLLFREQ0  (SYSCON_PLLFREQ0_MINT_SET(40) | \
+                     SYSCON_PLLFREQ0_MFRAC_SET(0) | \
+                     SYSCON_PLLFREQ0_PLLPWR)
+#  define PLLFREQ1  (SYSCON_PLLFREQ1_N_SET(0) | \
+                     SYSCON_PLLFREQ1_Q_SET(0))
+#  define RSCLKCFG  (SYSCON_RSCLKCFG_PSYSDIV_SET(3) | \
+                     SYSCON_RSCLKCFG_USEPLL | \
+                     SYSCON_RSCLKCFG_MEMTIMU | \
+                     SYSCON_RSCLKCFG_PLLSRC_MOSC | SYSCON_RSCLKCFG_NEWFREQ)
+#  define MEMTIME0  (SYSCON_MEMTIM0_FBCHT_3_5  | \
+                     SYSCON_MEMTIM0_FWS_SET(6) | \
+                     SYSCON_MEMTIM0_FBCE_FALL  | \
+                     SYSCON_MEMTIM0_EBCHT_3_5  | \
+                     SYSCON_MEMTIM0_EWS_SET(3) | \
+                     SYSCON_MEMTIM0_EBCE_FALL)
+#  define MEMTIME0_MASK (SYSCON_MEMTIM0_FBCHT_MASK | \
+                         SYSCON_MEMTIM0_FWS_MASK | \
+                         SYSCON_MEMTIM0_FBCE_MASK | \
+                         SYSCON_MEMTIM0_EBCHT_MASK | \
+                         SYSCON_MEMTIM0_EWS_MASK | \
+                         SYSCON_MEMTIM0_EBCE_MASK)
 #else
 #  error "Unknown value of CONFIG_SYSCLK_FREQUENCY"
 #endif
