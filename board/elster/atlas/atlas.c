@@ -41,7 +41,7 @@ int cm_reset(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 }
 
 U_BOOT_CMD(
-	cmreset, 1, 0,	cm_reset,
+	reboot, 1, 0,	cm_reset,
 	"Perform RESET of the CPU",
 	""
 );
