@@ -150,18 +150,19 @@ static void setup_pins(void)
 	configgpio(GPIO_TL_SHUTDOWN);
 	configgpio(GPIO_TL_PWRMON);
 	configgpio(GPIO_TL_IF_EN);
+	configgpio(GPIO_TL_PWR_SW);
 
   configgpio(GPIO_UART0_RX);
   configgpio(GPIO_UART0_TX);
 	configgpio(GPIO_UART0_DTR);
 	configgpio(GPIO_UART0_RTS);
 	configgpio(GPIO_UART0_CTS);
-	
 	configgpio(GPIO_UART1_TX);
   configgpio(GPIO_UART1_RX);
-	
 	configgpio(GPIO_UART2_TX);
   configgpio(GPIO_UART2_RX);
+	configgpio(GPIO_UART6_TX);
+  configgpio(GPIO_UART6_RX);
 
   configgpio(GPIO_SSI0_CLK);
   configgpio(GPIO_SSI0_RX);
