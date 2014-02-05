@@ -121,7 +121,7 @@
 #  define LM3S_ROMCON_BASE    (LM3S_PERIPH_BASE + 0xFE000)  /* ROM Control */
 #  define LM3S_SYSCON_BASE    (LM3S_PERIPH_BASE + 0xFE000)  /* System Control */
 
-#  define LM3S_UDMA_BASE      (LM3S_PERIPH_BASE + 0xFF000)  /* uDMA */
+#  define STLR_UDMA_BASE      (LM3S_PERIPH_BASE + 0xFF000)  /* uDMA */
 
 #else
 #  error "Peripheral base addresses not specified for this LM3S chip"

@@ -239,7 +239,9 @@ cpu_init_crit:
 	bl	mpu_init
 	mov	r0, #1
 	bl	mpu_enable
-
+#ifdef CONFIG_STELLARIS_DMA
+	bl dma_init
+#endif
 	/* Jump to board specific initialization */
 	bl	 lowlevel_board_init
 

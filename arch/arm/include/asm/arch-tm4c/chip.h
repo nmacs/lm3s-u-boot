@@ -46,13 +46,14 @@
 #  define LM3S_NTIMERS         8  /* Four general purpose timers */
 #  define LM3S_NETHCONTROLLERS 0  /* No Ethernet controller */
 #  undef  LM3S_ETHTS              /* No timestamp register */
-#  define LM3S_NSSI            4  /* Two SSI modules */
+#  define LM3S_NSSI            4  /* Four SSI modules */
 #  define LM3S_NUARTS          8  /* Two UART modules */
 #  define LM3S_NI2C            2  /* Two I2C modules */
 #  define LM3S_NADC            1  /* One ADC module */
 #  define LM2S_NPWM            0  /* No PWM generator modules */
 #  define LM3S_NQEI            0  /* No quadrature encoders */
 #  define LM3S_NPORTS          12 /* 12 Ports (GPIOA-P) */
+#  define STLR_NUDMA           32 /* 32 uDMA channels */
 
 #  define LM3S_SRAM_SIZE      0x40000
 #  define LM3S_FLASH_SIZE     0x100000

@@ -27,11 +27,13 @@ LIB	= $(obj)lib$(SOC).o
 
 # serial.o flash.o timer.o syscontrol.o
 COBJS	= common.o gpio.o serial.o flash.o timer.o syscontrol.o
+SOBJS	=
 ifdef CONFIG_WATCHDOG
 COBJS  += watchdog.o
 endif
-
-SOBJS	=
+ifdef CONFIG_STELLARIS_DMA
+COBJS  += dma.o
+endif
 
 SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
 OBJS	:= $(addprefix $(obj),$(COBJS) $(SOBJS))

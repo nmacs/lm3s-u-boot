@@ -73,6 +73,11 @@
 #define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + 1024 * 1024)
 
 /*
+ * DMA
+ */
+#define CONFIG_STELLARIS_DMA
+
+/*
  * SPI configuration
  */
 #define CONFIG_SPI
