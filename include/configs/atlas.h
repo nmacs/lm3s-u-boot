@@ -284,7 +284,8 @@
  */
 #define CONFIG_BOOTCOMMAND    "sf probe 0;ubi part serial0,0;ubifsmount rootfs;" \
                               "secld 0x60400000 ubifs:///boot/linux.bin cramfs:///pub_key;" \
-                              "bootm 0x60400080"
+                              "secld 0x60800000 ubifs:///boot/initrd.bin cramfs:///pub_key;" \
+                              "bootm 0x60400080 0x60800080"
 
 /*
  * Network Boot
@@ -293,7 +294,7 @@
                               "nfs ${rootpath}/boot/linux.bin;" \
                               "bootm 0x60400080"
 */
-#define CONFIG_NFSBOOTCOMMAND "dhcp; bootm 0x60400080"
+#define CONFIG_NFSBOOTCOMMAND "tftp 0x60400000 linux.bin; tftp 0x60800000 initrd.bin; bootm 0x60400080 0x60800080"
 
 #define CONFIG_BOOTFILE      "linux.bin"
 #define CONFIG_SERVERIP       255.255.255.255
