@@ -695,37 +695,72 @@ static inline void ssi_performrx(struct lm3s_spi_slave *priv)
 #ifdef CONFIG_STELLARIS_DMA
 static int spi_transfer_step(struct lm3s_spi_slave *priv)
 {
+	void *tx_buffer, *rx_buffer;
 	WATCHDOG_RESET();
-	
+
 	ssivdbg("%s: ntxwords %d, nrxwords %d, nwords %d, SR %08x\n",
           __func__, priv->ntxwords, priv->nrxwords, priv->nwords,
           ssi_getreg(priv, LM3S_SSI_SR_OFFSET));
 
 	if (priv->ntxwords == 0)
     return 0;
-	
+
 	priv->xfer_size = min(priv->ntxwords, DMA_MAX_TRANSFER_SIZE);
-	
+
 	if( priv->txbuffer )
 	{
-		dma_memcpy(priv->dma_tx_buffer, priv->txbuffer, priv->xfer_size);
+		tx_buffer = priv->txbuffer;
 		priv->txbuffer = (char*)priv->txbuffer + priv->xfer_size;
 	}
-	
+	else
+		tx_buffer = priv->dma_tx_buffer;
+
+	if (priv->rxbuffer )
+	{
+		rx_buffer = priv->rxbuffer;
+		priv->rxbuffer = (char*)priv->rxbuffer + priv->xfer_size;
+	}
+	else
+		rx_buffer = priv->dma_rx_buffer;
+
 	ssivdbg("%s: xfer_size %u\n", __func__, priv->xfer_size);
-	
-	dma_setup_xfer(priv->dma_rx_channel, priv->dma_rx_buffer,
-								 priv->base + LM3S_SSI_DR_OFFSET, priv->xfer_size, priv->dma_rx_flags);
-	dma_setup_xfer(priv->dma_tx_channel, priv->base + LM3S_SSI_DR_OFFSET,
-								 priv->dma_tx_buffer, priv->xfer_size, priv->dma_tx_flags);
+
+	dma_setup_xfer(priv->dma_rx_channel, 
+								rx_buffer, priv->base + LM3S_SSI_DR_OFFSET, priv->xfer_size, 
+								priv->dma_rx_flags);
+	dma_setup_xfer(priv->dma_tx_channel, 
+								priv->base + LM3S_SSI_DR_OFFSET, tx_buffer, priv->xfer_size, 
+								priv->dma_tx_flags);
 	dma_start_xfer(priv->dma_rx_channel);
 	dma_start_xfer(priv->dma_tx_channel);
-	
+
 #ifdef CONFIG_ARCH_TM4C12
 	putreg32(SSI_DMACTL_RXDMAE | SSI_DMACTL_TXDMAE, priv->base + LM3S_SSI_DMACTL_OFFSET);
 #endif /* CONFIG_ARCH_TM4C12 */
-	
+
 	return 1;
+}
+
+void spi_transfer_step_done(struct lm3s_spi_slave *priv)
+{
+		uint32_t regval;
+		regval = ssi_getreg(priv, LM3S_SSI_DMACTL_OFFSET);
+		regval &= ~SSI_DMACTL_TXDMAE;
+		ssi_putreg(priv, LM3S_SSI_DMACTL_OFFSET, regval);
+		ssi_putreg(priv, LM3S_SSI_ICR_OFFSET, SSI_ICR_DMATX);
+
+		regval = ssi_getreg(priv, LM3S_SSI_DMACTL_OFFSET);
+		regval &= ~SSI_DMACTL_RXDMAE;
+		ssi_putreg(priv, LM3S_SSI_DMACTL_OFFSET, regval);
+		ssi_putreg(priv, LM3S_SSI_ICR_OFFSET, SSI_ICR_DMARX);
+
+#ifdef SSI_VERBOSE_DEBUG
+		ssivdbg("RX data %u bytes (buf %p):\n", priv->xfer_size, priv->dma_rx_buffer);
+		print_buffer(0, priv->dma_rx_buffer, 1, priv->xfer_size, 0);
+#endif
+
+		priv->nrxwords += priv->xfer_size;
+		priv->ntxwords -= priv->xfer_size;
 }
 #endif
 
@@ -859,32 +894,8 @@ static int ssi_transfer(struct lm3s_spi_slave *priv, const void *txbuffer,
 #ifdef CONFIG_STELLARIS_DMA
 	ssidbg("Performing transfer...\n");
 	while (spi_transfer_step(priv)) {
-		uint32_t regval2;
-		
 		dma_wait_xfer_complete(priv->dma_rx_channel);
-		
-		regval2 = ssi_getreg(priv, LM3S_SSI_DMACTL_OFFSET);
-		regval2 &= ~SSI_DMACTL_TXDMAE;
-		ssi_putreg(priv, LM3S_SSI_DMACTL_OFFSET, regval2);
-		ssi_putreg(priv, LM3S_SSI_ICR_OFFSET, SSI_ICR_DMATX);
-		
-		regval2 = ssi_getreg(priv, LM3S_SSI_DMACTL_OFFSET);
-		regval2 &= ~SSI_DMACTL_RXDMAE;
-		ssi_putreg(priv, LM3S_SSI_DMACTL_OFFSET, regval2);
-		ssi_putreg(priv, LM3S_SSI_ICR_OFFSET, SSI_ICR_DMARX);
-		
-#ifdef SSI_VERBOSE_DEBUG
-		ssivdbg("RX data %u bytes (buf %p):\n", priv->xfer_size, priv->dma_rx_buffer);
-		print_buffer(0, priv->dma_rx_buffer, 1, priv->xfer_size, 0);
-#endif
-		
-		if( priv->rxbuffer )
-		{
-			dma_memcpy(priv->rxbuffer, priv->dma_rx_buffer, priv->xfer_size);
-			priv->rxbuffer = (char*)priv->rxbuffer + priv->xfer_size;
-		}
-		priv->nrxwords += priv->xfer_size;
-		priv->ntxwords -= priv->xfer_size;
+		spi_transfer_step_done(priv);
 	}
 	ssidbg("Transfer complete\n");
 #else /* CONFIG_STELLARIS_DMA */
