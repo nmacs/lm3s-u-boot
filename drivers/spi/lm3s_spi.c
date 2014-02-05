@@ -46,6 +46,9 @@
 #include <stdint.h>
 #include <asm/arch/hardware.h>
 #include <watchdog.h>
+#ifdef CONFIG_STELLARIS_DMA
+#include <asm/arch/dma.h>
+#endif
 
 struct lm3s_spi_slave {
   struct spi_slave slave;
@@ -64,9 +67,26 @@ struct lm3s_spi_slave {
   uint8_t  nbits;               /* Current number of bits per word */
   uint32_t actual;
 
+#ifdef CONFIG_STELLARIS_DMA
+	uint32_t dma_rx_flags;
+	uint32_t dma_tx_flags;
+	uint32_t dma_rx_channel;
+	uint32_t dma_tx_channel;
+	void *dma_rx_buffer;
+	void *dma_tx_buffer;
+	uint32_t xfer_size;
+#else
   void  (*txword)(struct lm3s_spi_slave *priv);
   void  (*rxword)(struct lm3s_spi_slave *priv);
+#endif
 };
+
+#ifdef CONFIG_STELLARIS_DMA
+static char ssi0_dma_rx_buffer[DMA_MAX_TRANSFER_SIZE];
+static char ssi0_dma_tx_buffer[DMA_MAX_TRANSFER_SIZE];
+static char ssi1_dma_rx_buffer[DMA_MAX_TRANSFER_SIZE];
+static char ssi1_dma_tx_buffer[DMA_MAX_TRANSFER_SIZE];
+#endif
 
 #ifdef CONFIG_BOARD_TRANSLATE_CS
 extern int board_translate_cs(unsigned int* translated_cs, unsigned int cs, unsigned int bus);
@@ -322,6 +342,8 @@ static void ssi_setfrequency(struct lm3s_spi_slave *priv, uint32_t frequency)
 
   /* Calcluate the actual frequency */
   priv->actual = CONFIG_SYSCLK_FREQUENCY / (cpsdvsr * (scr + 1));
+	
+	ssidbg("Actual frequency: %u\n", priv->actual);
 }
 
 /****************************************************************************
@@ -375,6 +397,7 @@ static void ssi_enable(struct lm3s_spi_slave *priv)
   ssi_putreg(priv, LM3S_SSI_CR1_OFFSET, regval);
 }
 
+#ifndef CONFIG_STELLARIS_DMA
 /****************************************************************************
  * Name: ssi_txnull, ssi_txuint16, and ssi_txuint8
  *
@@ -456,6 +479,7 @@ static void ssi_rxuint8(struct lm3s_spi_slave *priv)
   ssivdbg("RX: %p<-%02x\n", ptr, *ptr);
   priv->rxbuffer = (void*)(++ptr);
 }
+#endif
 
 /****************************************************************************
  * Name: ssi_txfifofull
@@ -511,6 +535,7 @@ static inline int ssi_rxfifoempty(struct lm3s_spi_slave *priv)
  *
  ****************************************************************************/
 
+#ifndef CONFIG_STELLARIS_DMA
 #if CONFIG_SSI_TXLIMIT == 1 && defined(CONFIG_SSI_POLLWAIT)
 static inline int ssi_performtx(struct lm3s_spi_slave *priv)
 {
@@ -665,6 +690,44 @@ static inline void ssi_performrx(struct lm3s_spi_slave *priv)
   ssi_putreg(priv, LM3S_SSI_IM_OFFSET, regval);
 #endif /* CONFIG_SSI_POLLWAIT */
 }
+#endif /* CONFIG_STELLARIS_DMA */
+
+#ifdef CONFIG_STELLARIS_DMA
+static int spi_transfer_step(struct lm3s_spi_slave *priv)
+{
+	WATCHDOG_RESET();
+	
+	ssivdbg("%s: ntxwords %d, nrxwords %d, nwords %d, SR %08x\n",
+          __func__, priv->ntxwords, priv->nrxwords, priv->nwords,
+          ssi_getreg(priv, LM3S_SSI_SR_OFFSET));
+
+	if (priv->ntxwords == 0)
+    return 0;
+	
+	priv->xfer_size = min(priv->ntxwords, DMA_MAX_TRANSFER_SIZE);
+	
+	if( priv->txbuffer )
+	{
+		dma_memcpy(priv->dma_tx_buffer, priv->txbuffer, priv->xfer_size);
+		priv->txbuffer = (char*)priv->txbuffer + priv->xfer_size;
+	}
+	
+	ssivdbg("%s: xfer_size %u\n", __func__, priv->xfer_size);
+	
+	dma_setup_xfer(priv->dma_rx_channel, priv->dma_rx_buffer,
+								 priv->base + LM3S_SSI_DR_OFFSET, priv->xfer_size, priv->dma_rx_flags);
+	dma_setup_xfer(priv->dma_tx_channel, priv->base + LM3S_SSI_DR_OFFSET,
+								 priv->dma_tx_buffer, priv->xfer_size, priv->dma_tx_flags);
+	dma_start_xfer(priv->dma_rx_channel);
+	dma_start_xfer(priv->dma_tx_channel);
+	
+#ifdef CONFIG_ARCH_TM4C12
+	putreg32(SSI_DMACTL_RXDMAE | SSI_DMACTL_TXDMAE, priv->base + LM3S_SSI_DMACTL_OFFSET);
+#endif /* CONFIG_ARCH_TM4C12 */
+	
+	return 1;
+}
+#endif
 
 /****************************************************************************
  * Name: ssi_transfer
@@ -697,7 +760,7 @@ static int ssi_transfer(struct lm3s_spi_slave *priv, const void *txbuffer,
 #endif
   int ntxd;
 
-  ssidbg("txbuffer: %p rxbuffer: %p nwords: %d\n", txbuffer, rxbuffer, nwords);
+  ssidbg("ssi_transfer: txbuffer: %p rxbuffer: %p nwords: %d\n", txbuffer, rxbuffer, nwords);
 
   /* Set up to perform the transfer */
 
@@ -707,6 +770,21 @@ static int ssi_transfer(struct lm3s_spi_slave *priv, const void *txbuffer,
   priv->nrxwords     = 0;                  /* Number of words received */
   priv->nwords       = nwords;             /* Total number of exchanges */
 
+#ifdef CONFIG_STELLARIS_DMA
+	priv->dma_tx_flags = DMA_XFER_MEMORY_TO_DEVICE;
+	priv->dma_rx_flags = DMA_XFER_DEVICE_TO_MEMORY;
+
+//	if (dev_priv->bits_per_word > 8)
+//	{
+//		priv_master->dma_tx_flags |= DMA_XFER_UNIT_WORD;
+//		priv_master->dma_rx_flags |= DMA_XFER_UNIT_WORD;
+//	}
+//  else
+//	{
+		priv->dma_tx_flags |= DMA_XFER_UNIT_BYTE;
+		priv->dma_rx_flags |= DMA_XFER_UNIT_BYTE;
+//	}
+#else
   /* Set up the low-level data transfer function pointers */
 
   if (priv->nbits > 8)
@@ -729,6 +807,7 @@ static int ssi_transfer(struct lm3s_spi_slave *priv, const void *txbuffer,
     {
       priv->rxword = ssi_rxnull;
     }
+#endif
 
   /* Prime the Tx FIFO to start the sequence (saves one interrupt).
    * At this point, all SSI interrupts should be disabled, but the
@@ -776,7 +855,39 @@ static int ssi_transfer(struct lm3s_spi_slave *priv, const void *txbuffer,
    * if (1) your SPI is very fast, and (2) if you only use very short
    * transfers.
    */
-
+	
+#ifdef CONFIG_STELLARIS_DMA
+	ssidbg("Performing transfer...\n");
+	while (spi_transfer_step(priv)) {
+		uint32_t regval2;
+		
+		dma_wait_xfer_complete(priv->dma_rx_channel);
+		
+		regval2 = ssi_getreg(priv, LM3S_SSI_DMACTL_OFFSET);
+		regval2 &= ~SSI_DMACTL_TXDMAE;
+		ssi_putreg(priv, LM3S_SSI_DMACTL_OFFSET, regval2);
+		ssi_putreg(priv, LM3S_SSI_ICR_OFFSET, SSI_ICR_DMATX);
+		
+		regval2 = ssi_getreg(priv, LM3S_SSI_DMACTL_OFFSET);
+		regval2 &= ~SSI_DMACTL_RXDMAE;
+		ssi_putreg(priv, LM3S_SSI_DMACTL_OFFSET, regval2);
+		ssi_putreg(priv, LM3S_SSI_ICR_OFFSET, SSI_ICR_DMARX);
+		
+#ifdef SSI_VERBOSE_DEBUG
+		ssivdbg("RX data %u bytes (buf %p):\n", priv->xfer_size, priv->dma_rx_buffer);
+		print_buffer(0, priv->dma_rx_buffer, 1, priv->xfer_size, 0);
+#endif
+		
+		if( priv->rxbuffer )
+		{
+			dma_memcpy(priv->rxbuffer, priv->dma_rx_buffer, priv->xfer_size);
+			priv->rxbuffer = (char*)priv->rxbuffer + priv->xfer_size;
+		}
+		priv->nrxwords += priv->xfer_size;
+		priv->ntxwords -= priv->xfer_size;
+	}
+	ssidbg("Transfer complete\n");
+#else /* CONFIG_STELLARIS_DMA */
   do
     {
       /* Handle outgoing Tx FIFO transfers */
@@ -788,6 +899,7 @@ static int ssi_transfer(struct lm3s_spi_slave *priv, const void *txbuffer,
       ssi_performrx(priv);
     }
   while (priv->nrxwords < priv->nwords);
+#endif /* CONFIG_STELLARIS_DMA */
 #endif
 
   return 0;
@@ -878,6 +990,21 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
   ssi_setmode(lss, mode);
   ssi_setbits(lss, 8);
   ssi_setfrequency(lss, max_hz);
+
+#ifdef CONFIG_STELLARIS_DMA
+	if (ssi_base == LM3S_SSI0_BASE) {
+		lss->dma_rx_channel = DMA_CHANNEL_SSI0_RX;
+		lss->dma_tx_channel = DMA_CHANNEL_SSI0_TX;
+		lss->dma_rx_buffer = ssi0_dma_rx_buffer;
+		lss->dma_tx_buffer = ssi0_dma_tx_buffer;
+	}
+	else if (ssi_base == LM3S_SSI1_BASE) {
+		lss->dma_rx_channel = DMA_CHANNEL_SSI1_RX;
+		lss->dma_tx_channel = DMA_CHANNEL_SSI1_TX;
+		lss->dma_rx_buffer = ssi1_dma_rx_buffer;
+		lss->dma_tx_buffer = ssi1_dma_tx_buffer;
+	}
+#endif
 
   return &lss->slave;
 }

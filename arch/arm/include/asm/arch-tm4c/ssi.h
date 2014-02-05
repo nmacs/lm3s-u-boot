@@ -57,6 +57,7 @@
 #define LM3S_SSI_RIS_OFFSET       0x018 /* SSI Raw Interrupt Status */
 #define LM3S_SSI_MIS_OFFSET       0x01c /* SSI Masked Interrupt Status */
 #define LM3S_SSI_ICR_OFFSET       0x020 /* SSI Interrupt Clear */
+#define LM3S_SSI_DMACTL_OFFSET    0x024 /* SSI DMA Control */
 #define LM3S_SSI_PERIPHID4_OFFSET 0xfd0 /* SSI Peripheral Identification 4 */
 #define LM3S_SSI_PERIPHID5_OFFSET 0xfd4 /* SSI Peripheral Identification 5 */
 #define LM3S_SSI_PERIPHID6_OFFSET 0xfd8 /* SSI Peripheral Identification 6 */
@@ -81,6 +82,7 @@
 #define LM3S_SSI0_RIS             (LM3S_SSI0_BASE + LM3S_SSI_RIS_OFFSET)
 #define LM3S_SSI0_MIS             (LM3S_SSI0_BASE + LM3S_SSI_MIS_OFFSET)
 #define LM3S_SSI0_ICR             (LM3S_SSI0_BASE + LM3S_SSI_ICR_OFFSET)
+#define LM3S_SSI0_DMACTL          (LM3S_SSI0_BASE + STLR_SSI_DMACTL_OFFSET)
 #define LM3S_SSI0_PERIPHID4       (LM3S_SSI0_BASE + LM3S_SSI_PERIPHID4_OFFSET)
 #define LM3S_SSI0_PERIPHID5       (LM3S_SSI0_BASE + LM3S_SSI_PERIPHID5_OFFSET)
 #define LM3S_SSI0_PERIPHID6       (LM3S_SSI0_BASE + LM3S_SSI_PERIPHID6_OFFSET)
@@ -104,6 +106,7 @@
 #define LM3S_SSI1_RIS             (LM3S_SSI1_BASE + LM3S_SSI_RIS_OFFSET)
 #define LM3S_SSI1_MIS             (LM3S_SSI1_BASE + LM3S_SSI_MIS_OFFSET)
 #define LM3S_SSI1_ICR             (LM3S_SSI1_BASE + LM3S_SSI_ICR_OFFSET)
+#define LM3S_SSI1_DMACTL          (LM3S_SSI1_BASE + STLR_SSI_DMACTL_OFFSET)
 #define LM3S_SSI1_PERIPHID4       (LM3S_SSI1_BASE + LM3S_SSI_PERIPHID4_OFFSET)
 #define LM3S_SSI1_PERIPHID5       (LM3S_SSI1_BASE + LM3S_SSI_PERIPHID5_OFFSET)
 #define LM3S_SSI1_PERIPHID6       (LM3S_SSI1_BASE + LM3S_SSI_PERIPHID6_OFFSET)
@@ -207,6 +210,13 @@
 
 #define SSI_ICR_ROR               (1 << 0)  /* Bit 0: SSI Receive Overrun Interrupt Clear */
 #define SSI_ICR_RT                (1 << 1)  /* Bit 1: SSI Receive Time-Out Interrupt Clear */
+#define SSI_ICR_DMARX             (1 << 4)  /* Bit 4: SSI Receive DMA Interrupt Clear */
+#define SSI_ICR_DMATX             (1 << 5)  /* Bit 5: SSI Transmit DMA Interrupt Clear */
+
+/* SSI DMA Control (SSIDMACTL), offset 0x024 */
+
+#define SSI_DMACTL_RXDMAE         (1 << 0) /* Bit 0: SSI Receive DMA Enable */
+#define SSI_DMACTL_TXDMAE         (1 << 1) /* Bit 1: SSI Receive DMA Enable */
 
 /* SSI Peripheral Identification n (SSIPERIPHIDn), offset 0xfd0-0xfec */
 
