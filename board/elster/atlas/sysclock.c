@@ -64,12 +64,12 @@
 #define MOSC_DELAY    (512*1024)
 #define PLLLOCK_DELAY (512*1024)
 
-static inline void delay(uint32_t delay)
+static inline void delay(uint32_t d)
 {
   __asm__ __volatile__("1:\n"
                        "\tsubs  %0, #1\n"
                        "\tbne   1b\n"
-                       : "=r"(delay) : "r"(delay));
+                       :: "r"(d));
 }
 
 static inline void plllock(void)
